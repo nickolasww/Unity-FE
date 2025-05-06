@@ -1,10 +1,13 @@
+"use client"
+
 import { useState } from "react"
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, SafeAreaView } from "react-native"
+import { Text, View, TextInput, TouchableOpacity, Alert, SafeAreaView } from "react-native"
 import { router } from "expo-router"
 import { registerUser } from "../../services/api"
 import { validateEmail, validatePassword } from "../../utils/validation"
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { Link } from "expo-router"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { StatusBar } from "expo-status-bar"
+import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons"
 
 const Register = () => {
   const [name, setName] = useState("")
@@ -12,10 +15,11 @@ const Register = () => {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-
   const [emailError, setEmailError] = useState("")
   const [passwordError, setPasswordError] = useState("")
   const [confirmPasswordError, setConfirmPasswordError] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const validateForm = (): boolean => {
     let isValid = true
@@ -64,7 +68,7 @@ const Register = () => {
 
       // Check if token exists before storing it
       if (data && data.token) {
-        await AsyncStorage.setItem('authToken', data.token)
+        await AsyncStorage.setItem("authToken", data.token)
         router.push("/home")
       } else {
         throw new Error(data.message)
@@ -77,150 +81,138 @@ const Register = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.welcome}>Welcome to NusaTrip</Text>
-
-      <View style={styles.form}>
-        {/* Name Input */}
-        <Text style={{ fontSize: 12, marginBottom: 5 }}>Your Name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="input your first name"
-          placeholderTextColor="#999"
-          value={name}
-          onChangeText={setName}
-        />
-
-        {/* Email Input */}
-        <Text style={{ fontSize: 12, marginBottom: 5 }}>Email</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="xxxxxx@gmail.com"
-          placeholderTextColor="#999"
-          value={email}
-          onChangeText={setEmail}
-        />
-        {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
-
-        {/* Password Input */}
-        <Text style={{ fontSize: 12, marginBottom: 5 }}>Password</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Input your password"
-          placeholderTextColor="#999"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-        {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
-
-        {/* Confirm Password Input */}
-        <Text style={{ fontSize: 12, marginBottom: 5 }}>Confirm Password</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Input confirm password"
-          placeholderTextColor="#999"
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-        />
-        {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
-
-        {/* Register Button */}
-        <TouchableOpacity style={styles.LoginButton} onPress={handleRegister} disabled={isSubmitting}>
-          <Text style={styles.LoginButtonText}>
-            {isSubmitting ? "Registering..." : "Sign up"}
-          </Text>
+    <View className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 p-10">
+        {/* Back button */}
+        <TouchableOpacity className="mt-4" onPress={() => router.back()}>
+          <AntDesign name="arrowleft" size={24} color="black" />
         </TouchableOpacity>
 
-        {/* Forget Password Link */}
-        <TouchableOpacity style={styles.forgetPasswordContainer}>
-          <Link href="/auth/forgotpassword">
-            <Text style={styles.forgetPassword}>Forget Password?</Text>
-          </Link>
-        </TouchableOpacity>
+        <View className="mt-10 pt-10">
+          <Text className="text-[#FF6347] text-3xl font-bold">Daftar Akun</Text>
+          <Text className="text-[#FF6347] mt-2">Mohon isikan data diri kamu dengan benar</Text>
+        </View>
 
-        {/* Continue with Google Button */}
-        <TouchableOpacity style={styles.LoginGoogleButton}>
-          <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 10 }}>
-            <Text style={styles.googlebutton}>Continue with Google</Text>
+        <View className="mt-8">
+          <Text className="text-gray-800 mb-2">Nama</Text>
+          <View className="relative">
+            <TextInput
+              className="h-14 border border-gray-300 rounded-lg px-4 pl-10 text-gray-700 bg-white"
+              placeholder="Ketik nama di sini"
+              placeholderTextColor="#999"
+              value={name}
+              onChangeText={setName}
+            />
+            <View className="absolute left-3 top-4">
+              <AntDesign name="user" size={18} color="#999" />
+            </View>
           </View>
+        </View>
+
+        <View className="mt-4">
+          <Text className="text-gray-800 mb-2">Email</Text>
+          <View className="relative">
+            <TextInput
+              className="h-14 border border-gray-300 rounded-lg px-4 pl-10 text-gray-700 bg-white"
+              placeholder="Ketik email di sini"
+              placeholderTextColor="#999"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text)
+                if (emailError) setEmailError("")
+              }}
+            />
+            <View className="absolute left-3 top-4">
+              <FontAwesome name="envelope-o" size={18} color="#999" />
+            </View>
+          </View>
+          {emailError ? <Text className="text-red-500 text-xs mt-1">{emailError}</Text> : null}
+        </View>
+
+        <View className="mt-4">
+          <Text className="text-gray-800 mb-2">Kata Sandi</Text>
+          <View className="relative">
+            <TextInput
+              className="h-14 border border-gray-300 rounded-lg px-4 pl-10 text-gray-700 bg-white"
+              placeholder="Ketik kata sandi di sini"
+              placeholderTextColor="#999"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text)
+                if (passwordError) setPasswordError("")
+              }}
+            />
+            <View className="absolute left-3 top-4">
+              <AntDesign name="lock" size={18} color="#999" />
+            </View>
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="absolute right-3 top-4">
+              <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#999" />
+            </TouchableOpacity>
+          </View>
+          {passwordError ? <Text className="text-red-500 text-xs mt-1">{passwordError}</Text> : null}
+        </View>
+
+        <View className="mt-4">
+          <Text className="text-gray-800 mb-2">Konfirmasi Kata Sandi</Text>
+          <View className="relative">
+            <TextInput
+              className="h-14 border border-gray-300 rounded-lg px-4 pl-10 text-gray-700 bg-white"
+              placeholder="Ketik kata sandi di sini"
+              placeholderTextColor="#999"
+              secureTextEntry={!showConfirmPassword}
+              value={confirmPassword}
+              onChangeText={(text) => {
+                setConfirmPassword(text)
+                if (confirmPasswordError) setConfirmPasswordError("")
+              }}
+            />
+            <View className="absolute left-3 top-4">
+              <AntDesign name="lock" size={18} color="#999" />
+            </View>
+            <TouchableOpacity
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-4"
+            >
+              <Ionicons name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#999" />
+            </TouchableOpacity>
+          </View>
+          {confirmPasswordError ? <Text className="text-red-500 text-xs mt-1">{confirmPasswordError}</Text> : null}
+        </View>
+
+        <TouchableOpacity
+          className="bg-[#FFA69E] rounded-lg py-4 items-center mt-8"
+          onPress={handleRegister}
+          disabled={isSubmitting}
+        >
+          <Text className="text-white font-bold">{isSubmitting ? "Mendaftar..." : "Daftar"}</Text>
         </TouchableOpacity>
 
-        {/* Sign Up Link */}
-        <View style={{ flexDirection: "row", justifyContent: "center" }}>
-          <Text>You don't have an account? </Text>
+        <View className="flex-row items-center justify-center my-6">
+          <View className="border-t border-gray-300 flex-1"></View>
+          <Text className="mx-4 text-gray-500">Atau</Text>
+          <View className="border-t border-gray-300 flex-1"></View>
+        </View>
+
+        <TouchableOpacity className="bg-white rounded-lg py-4 border border-gray-300 flex-row items-center justify-center">
+          <View className="mr-2">
+            <FontAwesome name="google" size={18} color="#4285F4" />
+          </View>
+          <Text className="text-gray-700">Daftar dengan Google</Text>
+        </TouchableOpacity>
+
+        <View className="flex-row justify-center mt-6">
+          <Text className="text-gray-700">Sudah punya akun? </Text>
           <TouchableOpacity onPress={() => router.push("/auth/login")}>
-            <Text style={styles.SignUp}>Sign in</Text>
+            <Text className="font-bold text-[#FF6347]">Masuk</Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+      <StatusBar style="dark" />
+    </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f0e8",
-  },
-  welcome: {
-    color: "#762727",
-    fontSize: 28,
-    fontWeight: "bold",
-    marginTop: 50,
-    marginBottom: 30,
-    textAlign: "center",
-  },
-  form: {
-    width: "80%",
-    marginLeft: "auto",
-    marginRight: "auto",
-  },
-  input: {
-    height: 50,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 7,
-    marginBottom: 20,
-    paddingLeft: 10,
-  },
-  errorText: {
-    color: "red",
-    fontSize: 12,
-  },
-  LoginButton: {
-    backgroundColor: "#8b2331",
-    borderRadius: 10,
-    padding: 15,
-    alignItems: "center",
-  },
-  LoginButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  forgetPasswordContainer: {
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  forgetPassword: {
-    color: "#8b2331",
-    textAlign: "center",
-    fontWeight: "bold",
-  },
-  LoginGoogleButton: {
-    padding: 15,
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    marginBottom: 20,
-  },
-  googlebutton: {
-    textAlign: "center",
-    justifyContent: "center",
-  },
-  SignUp: {
-    color: "#8b2331",
-  },
-})
 
 export default Register
