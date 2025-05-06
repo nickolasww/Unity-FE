@@ -12,7 +12,6 @@ import {
 } from "react-native"
 import { Link, router } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
-import "../global.css"
 
 const { width, height } = Dimensions.get("window")
 
@@ -108,7 +107,7 @@ export default function App() {
               </View>
 
               <TouchableOpacity style={styles.continueButton} onPress={handleNext}>
-                <Text style={styles.continueButtonText}>
+                <Text className="text-black font-bold text-2xl text-center">
                   {index === slides.length - 1 ? "Get Started" : "Continue"}
                 </Text>
               </TouchableOpacity>

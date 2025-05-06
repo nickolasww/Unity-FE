@@ -125,7 +125,7 @@ const Login = () => {
           <View style={{ flexDirection: "row", justifyContent: "center" }}>
             <Text>You don't have an account? </Text>
             <TouchableOpacity onPress={() => router.push("/auth/register")}>
-              <Text style={styles.SignUp}>Sign up</Text>
+              <Text className='text-bold font-2xl text-white'>Sign up</Text>
             </TouchableOpacity>
           </View>
         </View>
