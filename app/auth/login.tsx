@@ -1,11 +1,15 @@
-import { StatusBar } from 'expo-status-bar'
-import { Text, TextInput, TouchableOpacity, View, SafeAreaView, StyleSheet, Alert } from 'react-native'
-import { useState } from 'react'
+"use client"
+
+import { StatusBar } from "expo-status-bar"
+import { Text, TextInput, TouchableOpacity, View, SafeAreaView, Alert } from "react-native"
+import { useState } from "react"
 import { router } from "expo-router"
-import { loginUser } from '../../services/api' 
-import { validateEmail, validatePassword } from '../../utils/validation' 
-import { Link } from "expo-router"
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { loginUser } from "../../services/api"
+import { validateEmail, validatePassword } from "../../utils/validation"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { FontAwesome } from "@expo/vector-icons"
+import { AntDesign } from "@expo/vector-icons"
+import { Ionicons } from "@expo/vector-icons"
 
 const Login = () => {
   const [email, setEmail] = useState("")
@@ -21,7 +25,7 @@ const Login = () => {
 
     // Validate email
     if (!validateEmail(email)) {
-      setEmailError("Please enter a valid email address.")
+      setEmailError("Mohon masukkan email yang valid.")
       isValid = false
     } else {
       setEmailError("")
@@ -30,7 +34,7 @@ const Login = () => {
     // Validate password
     const passwordValidation = validatePassword(password)
     if (!passwordValidation.valid) {
-      setPasswordError(passwordValidation.message || "Password is required.")
+      setPasswordError(passwordValidation.message || "Kata Sandi diperlukan.")
       isValid = false
     } else {
       setPasswordError("")
@@ -45,156 +49,114 @@ const Login = () => {
 
     try {
       setIsSubmitting(true)
-      const data = await loginUser(email, password) // Make the login API call
+      const data = await loginUser(email, password) 
 
       // Check if token exists before storing it
       if (data && data.token) {
-        await AsyncStorage.setItem('authToken', data.token)  // Save the token to AsyncStorage
-        router.push("/home")  // Navigate to home screen after login
+        await AsyncStorage.setItem("authToken", data.token) 
+        router.push("/home") 
       } else {
-        throw new Error("Authentication token not found.") // Handle case where token is missing
+        throw new Error("Authentication token tidak ditemukan") 
       }
     } catch (error: any) {
-      Alert.alert("Login Failed", error.message || "Your email or password is incorrect.")
+      Alert.alert("Login Failed", error.message || "Email dan Password tidak valid.")
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView>
-        <Text style={styles.welcome}>Welcome Back!</Text>
+    <View className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 p-10">
+        {/* Back button */}
+        <TouchableOpacity className="mt-4" onPress={() => router.back()}>
+          <AntDesign name="arrowleft" size={24} color="black" />
+        </TouchableOpacity>
 
-        <View style={styles.form}>
-          {/* Email Input */}
-          <Text style={{ fontSize: 12, marginBottom: 5 }}>Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="xxxxxx@gmail.com"
-            placeholderTextColor="#999"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text)
-              if (emailError) setEmailError("") // Reset email error on change
-            }}
-          />
-          {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+        <View className="mt-10 pt-20">
+          <Text className="text-[#FF6347] text-3xl font-bold">Masuk Akun</Text>
+          <Text className="text-[#FF6347] mt-2">
+            Selamat datang kembali, silahkan masukkan email dan kata sandi kamu.
+          </Text>
+        </View>
 
-          {/* Password Input */}
-          <Text style={{ fontSize: 12, marginBottom: 5 }}>Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Input Your Password"
-            placeholderTextColor="#999"
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text)
-              if (passwordError) setPasswordError("") // Reset password error on change
-            }}
-          />
-          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+        <View className="mt-8">
+          <Text className="text-gray-800 mb-2">Email</Text>
+          <View className="relative">
+            <TextInput
+              className="h-14 border border-gray-300 rounded-lg px-4 pl-10 text-gray-700 bg-white"
+              placeholder="Ketik email di sini"
+              placeholderTextColor="#999"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text)
+                if (emailError) setEmailError("") 
+              }}
+            />
+            <View className="absolute left-3 top-4">
+              <FontAwesome name="envelope-o" size={18} color="#999" />
+            </View>
+          </View>
+          {emailError ? <Text className="text-red-500 text-xs mt-1">{emailError}</Text> : null}
+        </View>
 
-          {/* Login Button */}
-          <TouchableOpacity
-            style={styles.LoginButton}
-            onPress={handleLogin}
-            disabled={isSubmitting}
-          >
-            <Text style={styles.LoginButtonText}>
-              {isSubmitting ? "Logging in..." : "Login"}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Forget Password Link */}
-          <TouchableOpacity style={styles.forgetPasswordContainer}>
-            <Link href="/auth/forgotpassword">
-              <Text style={styles.forgetPassword}>Forget Password?</Text>
-            </Link>
-          </TouchableOpacity>
-
-          {/* Continue with Google Button */}
-          <TouchableOpacity style={styles.LoginGoogleButton}>
-            <Text style={styles.googlebutton}>Continue with Google</Text>
-          </TouchableOpacity>
-
-          {/* Sign Up Link */}
-          <View style={{ flexDirection: "row", justifyContent: "center" }}>
-            <Text>You don't have an account? </Text>
-            <TouchableOpacity onPress={() => router.push("/auth/register")}>
-              <Text className='text-bold font-2xl text-white'>Sign up</Text>
+        <View className="mt-4">
+          <Text className="text-gray-800 mb-2">Kata Sandi</Text>
+          <View className="relative">
+            <TextInput
+              className="h-14 border border-gray-300 rounded-lg px-4 pl-10 text-gray-700 bg-white"
+              placeholder="Ketik kata sandi di sini"
+              placeholderTextColor="#999"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text)
+                if (passwordError) setPasswordError("") // Reset password error on change
+              }}
+            />
+            <View className="absolute left-3 top-4">
+              <AntDesign name="lock" size={18} color="#999" />
+            </View>
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="absolute right-3 top-4">
+              <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#999" />
             </TouchableOpacity>
           </View>
+          {passwordError ? <Text className="text-red-500 text-xs mt-1">{passwordError}</Text> : null}
+        </View>
+
+        <TouchableOpacity
+          className="bg-[#FFA69E] rounded-lg py-4 items-center mt-8"
+          onPress={handleLogin}
+          disabled={isSubmitting}
+        >
+          <Text className="text-white font-bold">{isSubmitting ? "Masuk..." : "Masuk"}</Text>
+        </TouchableOpacity>
+
+        <View className="flex-row items-center justify-center my-6">
+          <View className="border-t border-gray-300 flex-1"></View>
+          <Text className="mx-4 text-gray-500">Atau</Text>
+          <View className="border-t border-gray-300 flex-1"></View>
+        </View>
+
+        <TouchableOpacity className="bg-white rounded-lg py-4 border border-gray-300 flex-row items-center justify-center">
+          <View className="mr-2">
+            <FontAwesome name="google" size={18} color="#4285F4" />
+          </View>
+          <Text className="text-gray-700">Masuk dengan Google</Text>
+        </TouchableOpacity>
+
+        <View className="flex-row justify-center mt-6">
+          <Text className="text-gray-700">Sudah punya akun? </Text>
+          <TouchableOpacity onPress={() => router.push("/auth/register")}>
+            <Text className="font-bold text-[#FF6347]">Daftar</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
+      <StatusBar style="dark" />
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f0e8",
-  },
-  welcome: {
-    color: '#762727',
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginTop: 50,
-    marginBottom: 30,
-    textAlign: 'center',
-  },
-  form: {
-    width: "80%",
-    marginLeft: "auto",
-    marginRight: "auto",
-  },
-  input: {
-    height: 50,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 7,
-    marginBottom: 20,
-    paddingLeft: 10,
-  },
-  errorText: {
-    color: "red",
-    fontSize: 12,
-  },
-  LoginButton: {
-    backgroundColor: "#8b2331",
-    borderRadius: 10,
-    padding: 15,
-    alignItems: "center",
-  },
-  LoginButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  forgetPasswordContainer: {
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  forgetPassword: {
-    color: "#8b2331",
-    textAlign: "center",
-    fontWeight: "bold",
-  },
-  LoginGoogleButton: {
-    padding: 15,
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    marginBottom: 20,
-  },
-  googlebutton: {
-    textAlign: "center",
-  },
-  SignUp: {
-    color: "#8b2331",
-  },
-})
 
 export default Login
