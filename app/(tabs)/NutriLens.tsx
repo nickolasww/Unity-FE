@@ -7,6 +7,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons"
 import { useNavigation } from "@react-navigation/native"
 import type { FoodItem } from "../../utils/foodtypes"
 import FoodHistoryItem from "../../components/foodhistory/foodhistoryitem"
+import { useRouter } from "expo-router"
 
 // Data dummy untuk riwayat makanan
 const initialFoodHistory: FoodItem[] = [
@@ -32,13 +33,12 @@ export default function NutriLensScreen() {
   const [activeTab, setActiveTab] = useState("NutriKu")
   const [foodHistory, setFoodHistory] = useState<FoodItem[]>(initialFoodHistory)
   const [searchText, setSearchText] = useState("")
-
-  const navigation = useNavigation()
+  const router = useRouter()
 
   const handleScanFood = () => {
     // Implementasi logika untuk membuka kamera dan scan makanan
     console.log("Scanning food...")
-    // Navigasi ke screen kamera (belum diimplementasikan)
+    router.push("/nutrilens/nutricamera");
     // navigation.navigate('FoodScannerScreen');
   }
 

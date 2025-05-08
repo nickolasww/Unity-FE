@@ -12,7 +12,6 @@ import {
   type ImageSourcePropType,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useRouter } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 
 // Import local images
@@ -105,7 +104,6 @@ const localTours: ItemType[] = [
 
 export default function NuTracker() {
   // Use the router from expo-router instead of navigation
-  const router = useRouter()
   const [selectedLocation, setSelectedLocation] = useState("Yogyakarta")
   const [showLocationDropdown, setShowLocationDropdown] = useState(false)
 
@@ -113,10 +111,6 @@ export default function NuTracker() {
 
   const navigateToDetail = (item: ItemType) => {
     // Use router.push instead of navigation.navigate
-    router.push({
-      pathname: "/Detail",
-      params: { ...item, image: undefined, location: JSON.stringify(item.location) },
-    })
   }
 
   const renderListingItem = (item: ItemType) => (
