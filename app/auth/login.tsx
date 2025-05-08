@@ -25,6 +25,9 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGoogleAuthInProgress, setIsGoogleAuthInProgress] = useState(false)
 
+  // Define your app's URL scheme
+  const redirectUri = Linking.createURL("auth/callback")
+
   // Handle deep linking for OAuth callback
   useEffect(() => {
     // Set up the URL listener for when the app is opened via deep link
@@ -57,8 +60,31 @@ const Login = () => {
           router.push("/home")
         } else {
           // If no token in URL, you might need to exchange a code for a token
-          Alert.alert("Login Success", "Redirecting to home...")
-          router.push("/home")
+          const code = url.searchParams.get("code")
+          if (code) {
+            // Exchange code for token with your backend
+            try {
+              const response = await fetch("https://ef84-175-45-191-14.ngrok-free.app/api/v1/oauth/token", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ code }),
+              })
+
+              const data = await response.json()
+              if (data && data.token) {
+                await AsyncStorage.setItem("authToken", data.token)
+                router.push("/home")
+              } else {
+                throw new Error("No token received from server")
+              }
+            } catch (error) {
+              Alert.alert("Authentication Error", "Failed to exchange code for token")
+            }
+          } else {
+            Alert.alert("Authentication Error", "No token or code found in redirect URL")
+          }
         }
       } catch (error) {
         Alert.alert("Authentication Error", error.message || "Failed to process authentication")
@@ -117,17 +143,19 @@ const Login = () => {
     try {
       setIsGoogleAuthInProgress(true)
 
-      // Get the redirect URL from your backend
-      const redirectUrl = "https://ab2a-140-0-120-106.ngrok-free.app/api/v1/redirect"
+      // Include the redirect URI as a query parameter
+      // This tells your backend where to redirect after authentication
+      const authUrl = `https://ef84-175-45-191-14.ngrok-free.app/api/v1/oauth/redirect?redirect_uri=${encodeURIComponent(redirectUri)}`
 
       // Open the browser for authentication
-      const result = await WebBrowser.openAuthSessionAsync(
-        redirectUrl,
-        Linking.createURL("/auth/login"), // Your app's deep link
-      )
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri, {
+        showInRecents: true,
+        // This ensures the browser closes after redirect
+        preferEphemeralSession: true,
+      })
 
+      // If user manually cancels the auth session
       if (result.type === "cancel") {
-        // User canceled the authentication
         setIsGoogleAuthInProgress(false)
         Alert.alert("Authentication Canceled", "Google sign in was canceled")
       }
