@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { Link, router } from "expo-router";
 
 // Main App Component
-export default function TravelApp() {
+export default function home() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />

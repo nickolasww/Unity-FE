@@ -73,7 +73,7 @@ const Register = () => {
     try {
       setIsGoogleAuthInProgress(true)
 
-      const redirectUrl = "https://ef84-175-45-191-14.ngrok-free.app/api/v1/redirect"
+      const redirectUrl = "https://462e-175-45-191-14.ngrok-free.app/api/v1/redirect"
 
       const result = await WebBrowser.openAuthSessionAsync(
         redirectUrl,

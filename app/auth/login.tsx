@@ -26,73 +26,42 @@ const Login = () => {
   const [isGoogleAuthInProgress, setIsGoogleAuthInProgress] = useState(false)
 
   // Define your app's URL scheme
-  const redirectUri = Linking.createURL("auth/callback")
+  const redirectUri = Linking.createURL("/home")
 
   // Handle deep linking for OAuth callback
   useEffect(() => {
-    // Set up the URL listener for when the app is opened via deep link
-    const subscription = Linking.addEventListener("url", handleRedirect)
-
-    return () => {
-      subscription.remove()
-    }
-  }, [])
-
-  // Handle the redirect from OAuth
-  const handleRedirect = async (event: { url: string | URL }) => {
-    if (isGoogleAuthInProgress && event.url) {
-      setIsGoogleAuthInProgress(false)
-
+    const checkToken = async () => {
       try {
-        // Extract token or auth code from URL if your backend redirects with these params
-        const url = new URL(event.url)
-        const token = url.searchParams.get("token")
-        const error = url.searchParams.get("error")
-
-        if (error) {
-          Alert.alert("Authentication Error", error)
-          return
-        }
-
+        const token = await AsyncStorage.getItem("Token")
         if (token) {
-          // Store the token
-          await AsyncStorage.setItem("authToken", token)
           router.push("/home")
-        } else {
-          // If no token in URL, you might need to exchange a code for a token
-          const code = url.searchParams.get("code")
-          if (code) {
-            // Exchange code for token with your backend
-            try {
-              const response = await fetch("https://ef84-175-45-191-14.ngrok-free.app/api/v1/oauth/token", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ code }),
-              })
-
-              const data = await response.json()
-              if (data && data.token) {
-                await AsyncStorage.setItem("authToken", data.token)
-                router.push("/home")
-              } else {
-                throw new Error("No token received from server")
-              }
-            } catch (error) {
-              Alert.alert("Authentication Error", "Failed to exchange code for token")
-            }
-          } else {
-            Alert.alert("Authentication Error", "No token or code found in redirect URL")
-          }
         }
       } catch (error) {
-        Alert.alert("Authentication Error", error.message || "Failed to process authentication")
+        console.error("Failed to check token", error)
       }
     }
-  }
 
-  // Validate the form
+    checkToken()
+  }, [])
+
+  const handleRedirect = async (event: { url: string | URL }) => {
+    if (!isGoogleAuthInProgress || !event.url) return
+  
+    setIsGoogleAuthInProgress(false)
+  
+    try {
+      const url = new URL(event.url)
+      const error = url.searchParams.get("error")
+  
+      if (error) {
+        Alert.alert("Login Gagal", decodeURIComponent(error))
+        return
+      }
+    } catch (err: any) {
+      Alert.alert("Autentikasi Error", err?.message || "Gagal memproses login.")
+    }
+  }
+  
   const validateForm = (): boolean => {
     let isValid = true
 
@@ -112,21 +81,19 @@ const Login = () => {
     } else {
       setPasswordError("")
     }
-
     return isValid
   }
 
   // Handle login process
   const handleLogin = async () => {
-    if (!validateForm()) return // Prevent login if form is invalid
+    if (!validateForm()) return 
 
     try {
       setIsSubmitting(true)
       const data = await loginUser(email, password)
 
-      // Check if token exists before storing it
       if (data && data.token) {
-        await AsyncStorage.setItem("authToken", data.token)
+        await AsyncStorage.setItem("Token", data.token)
         router.push("/home")
       } else {
         throw new Error("Authentication token tidak ditemukan")
@@ -142,29 +109,23 @@ const Login = () => {
   const handleGoogleSignIn = async () => {
     try {
       setIsGoogleAuthInProgress(true)
-
-      // Include the redirect URI as a query parameter
-      // This tells your backend where to redirect after authentication
-      const authUrl = `https://ef84-175-45-191-14.ngrok-free.app/api/v1/oauth/redirect?redirect_uri=${encodeURIComponent(redirectUri)}`
-
-      // Open the browser for authentication
+  
+      const authUrl = `https://462e-175-45-191-14.ngrok-free.app/api/v1/oauth/redirect`
+  
       const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri, {
         showInRecents: true,
-        // This ensures the browser closes after redirect
         preferEphemeralSession: true,
       })
-
-      // If user manually cancels the auth session
+  
       if (result.type === "cancel") {
         setIsGoogleAuthInProgress(false)
-        Alert.alert("Authentication Canceled", "Google sign in was canceled")
+        Alert.alert("Dibatalkan", "Login Google dibatalkan.")
       }
-
-      // The actual token handling will be done in the handleRedirect function
-      // when the app is opened via deep link
-    } catch (error) {
+  
+      // Jika result.type === "success", handleRedirect akan berjalan otomatis via event listener
+    } catch (error: any) {
       setIsGoogleAuthInProgress(false)
-      Alert.alert("Google Sign In Error", error.message || "Failed to authenticate with Google")
+      Alert.alert("Google Sign In Error", error?.message || "Gagal login via Google")
     }
   }
 
