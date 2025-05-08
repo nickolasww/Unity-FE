@@ -2,7 +2,7 @@
 
 import { StatusBar } from "expo-status-bar"
 import { Text, TextInput, TouchableOpacity, View, SafeAreaView, Alert } from "react-native"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { router } from "expo-router"
 import { loginUser } from "../../services/api"
 import { validateEmail, validatePassword } from "../../utils/validation"
@@ -10,6 +10,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { FontAwesome } from "@expo/vector-icons"
 import { AntDesign } from "@expo/vector-icons"
 import { Ionicons } from "@expo/vector-icons"
+import * as WebBrowser from "expo-web-browser"
+import * as Linking from "expo-linking"
+
+// Register for redirect
+WebBrowser.maybeCompleteAuthSession()
 
 const Login = () => {
   const [email, setEmail] = useState("")
@@ -18,6 +23,48 @@ const Login = () => {
   const [emailError, setEmailError] = useState("")
   const [passwordError, setPasswordError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isGoogleAuthInProgress, setIsGoogleAuthInProgress] = useState(false)
+
+  // Handle deep linking for OAuth callback
+  useEffect(() => {
+    // Set up the URL listener for when the app is opened via deep link
+    const subscription = Linking.addEventListener("url", handleRedirect)
+
+    return () => {
+      subscription.remove()
+    }
+  }, [])
+
+  // Handle the redirect from OAuth
+  const handleRedirect = async (event: { url: string | URL }) => {
+    if (isGoogleAuthInProgress && event.url) {
+      setIsGoogleAuthInProgress(false)
+
+      try {
+        // Extract token or auth code from URL if your backend redirects with these params
+        const url = new URL(event.url)
+        const token = url.searchParams.get("token")
+        const error = url.searchParams.get("error")
+
+        if (error) {
+          Alert.alert("Authentication Error", error)
+          return
+        }
+
+        if (token) {
+          // Store the token
+          await AsyncStorage.setItem("authToken", token)
+          router.push("/home")
+        } else {
+          // If no token in URL, you might need to exchange a code for a token
+          Alert.alert("Login Success", "Redirecting to home...")
+          router.push("/home")
+        }
+      } catch (error) {
+        Alert.alert("Authentication Error", error.message || "Failed to process authentication")
+      }
+    }
+  }
 
   // Validate the form
   const validateForm = (): boolean => {
@@ -49,19 +96,47 @@ const Login = () => {
 
     try {
       setIsSubmitting(true)
-      const data = await loginUser(email, password) 
+      const data = await loginUser(email, password)
 
       // Check if token exists before storing it
       if (data && data.token) {
-        await AsyncStorage.setItem("authToken", data.token) 
-        router.push("/home") 
+        await AsyncStorage.setItem("authToken", data.token)
+        router.push("/home")
       } else {
-        throw new Error("Authentication token tidak ditemukan") 
+        throw new Error("Authentication token tidak ditemukan")
       }
     } catch (error: any) {
       Alert.alert("Login Failed", error.message || "Email dan Password tidak valid.")
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  // Handle Google Sign In
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsGoogleAuthInProgress(true)
+
+      // Get the redirect URL from your backend
+      const redirectUrl = "https://ab2a-140-0-120-106.ngrok-free.app/api/v1/redirect"
+
+      // Open the browser for authentication
+      const result = await WebBrowser.openAuthSessionAsync(
+        redirectUrl,
+        Linking.createURL("/auth/login"), // Your app's deep link
+      )
+
+      if (result.type === "cancel") {
+        // User canceled the authentication
+        setIsGoogleAuthInProgress(false)
+        Alert.alert("Authentication Canceled", "Google sign in was canceled")
+      }
+
+      // The actual token handling will be done in the handleRedirect function
+      // when the app is opened via deep link
+    } catch (error) {
+      setIsGoogleAuthInProgress(false)
+      Alert.alert("Google Sign In Error", error.message || "Failed to authenticate with Google")
     }
   }
 
@@ -92,7 +167,7 @@ const Login = () => {
               value={email}
               onChangeText={(text) => {
                 setEmail(text)
-                if (emailError) setEmailError("") 
+                if (emailError) setEmailError("")
               }}
             />
             <View className="absolute left-3 top-4">
@@ -140,15 +215,19 @@ const Login = () => {
           <View className="border-t border-gray-300 flex-1"></View>
         </View>
 
-        <TouchableOpacity className="bg-white rounded-lg py-4 border border-gray-300 flex-row items-center justify-center">
+        <TouchableOpacity
+          className="bg-white rounded-lg py-4 border border-gray-300 flex-row items-center justify-center"
+          onPress={handleGoogleSignIn}
+          disabled={isGoogleAuthInProgress}
+        >
           <View className="mr-2">
             <FontAwesome name="google" size={18} color="#4285F4" />
           </View>
-          <Text className="text-gray-700">Masuk dengan Google</Text>
+          <Text className="text-gray-700">{isGoogleAuthInProgress ? "Menghubungkan..." : "Masuk dengan Google"}</Text>
         </TouchableOpacity>
 
         <View className="flex-row justify-center mt-6">
-          <Text className="text-gray-700">Sudah punya akun? </Text>
+          <Text className="text-gray-700">Belum punya akun? </Text>
           <TouchableOpacity onPress={() => router.push("/auth/register")}>
             <Text className="font-bold text-[#FF6347]">Daftar</Text>
           </TouchableOpacity>

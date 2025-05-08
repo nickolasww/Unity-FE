@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, use } from "react"
 import { Text, View, TextInput, TouchableOpacity, Alert, SafeAreaView } from "react-native"
 import { router } from "expo-router"
 import { registerUser } from "../../services/api"
@@ -8,6 +8,10 @@ import { validateEmail, validatePassword } from "../../utils/validation"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { StatusBar } from "expo-status-bar"
 import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons"
+import * as WebBrowser from "expo-web-browser"
+import * as Linking from "expo-linking"
+
+WebBrowser.maybeCompleteAuthSession()
 
 const Register = () => {
   const [name, setName] = useState("")
@@ -20,17 +24,80 @@ const Register = () => {
   const [confirmPasswordError, setConfirmPasswordError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isGoogleAuthInProgress, setIsGoogleAuthInProgress] = useState(false)
+
+  useEffect(() =>{ 
+    const subscription = Linking.addEventListener("url", handleRedirect)
+
+    return () => { 
+      subscription.remove()
+    }
+  }, [])
+
+  // Handle deep linking for OAuth callback
+  const handleRedirect = async (event: { url: string | URL }) => { 
+    if(isGoogleAuthInProgress && event.url) { 
+      setIsGoogleAuthInProgress(false)
+
+      try { 
+        const url = new URL(event.url)
+        const token = url.searchParams.get("token")
+        const error = url.searchParams.get("error") 
+
+        if(error) { 
+          Alert.alert("Authentication Error", error)
+          return
+        } 
+        if(token){ 
+          await AsyncStorage.setItem("authToken", token)
+
+          Alert.alert("Pendaftaran Berhasil", "Akun Anda telah berhasil dibuat!",[
+            {
+              text: "OK",
+              onPress: () => router.push("/home"),
+            },
+          ])
+        }else { 
+          Alert.alert("Pendaftaran Berhasil", "Akun Anda telah berhasil dibuat!", [
+            { text: "OK", onPress: () => router.push("/home") },
+          ])
+        }
+      }catch (error){ 
+        Alert.alert("Pendaftaran Gagal", "Terjadi kesalahan saat mendaftar. Silakan coba lagi.")
+      }
+    }
+  }
+
+  // Handle Google Sign Up
+  const handleGoogleSignUp = async () => {
+    try {
+      setIsGoogleAuthInProgress(true)
+
+      const redirectUrl = "https://ab2a-140-0-120-106.ngrok-free.app/api/v1/redirect"
+
+      const result = await WebBrowser.openAuthSessionAsync(
+        redirectUrl,
+        Linking.createURL("/auth/register"), // Your app's deep link for register page
+      )
+
+      if (result.type === "cancel") {
+        setIsGoogleAuthInProgress(false)
+        Alert.alert("Authentication Canceled", "Pendaftaran dengan Google dibatalkan")
+      }
+    } catch (error) {
+      setIsGoogleAuthInProgress(false)
+      Alert.alert("Google Sign Up Error", error.message || "Gagal melakukan autentikasi dengan Google")
+    }
+  }
 
   const validateForm = (): boolean => {
     let isValid = true
 
-    // Validate name
     if (!name) {
       Alert.alert("Please enter your name.")
       isValid = false
     }
 
-    // Validate email
     if (!validateEmail(email)) {
       setEmailError("Please enter a valid email address.")
       isValid = false
@@ -38,7 +105,6 @@ const Register = () => {
       setEmailError("")
     }
 
-    // Validate password
     const passwordValidation = validatePassword(password)
     if (!passwordValidation.valid) {
       setPasswordError(passwordValidation.message || "Password is required.")
@@ -47,7 +113,6 @@ const Register = () => {
       setPasswordError("")
     }
 
-    // Validate confirmPassword
     if (password !== confirmPassword) {
       setConfirmPasswordError("Passwords do not match.")
       isValid = false
@@ -58,15 +123,12 @@ const Register = () => {
     return isValid
   }
 
-  // Handle registration process
   const handleRegister = async () => {
     if (!validateForm()) return
 
     try {
       setIsSubmitting(true)
       const data = await registerUser(name, email, password, confirmPassword)
-
-      // Check if token exists before storing it
       if (data && data.token) {
         await AsyncStorage.setItem("authToken", data.token)
         router.push("/home")
@@ -196,11 +258,11 @@ const Register = () => {
           <View className="border-t border-gray-300 flex-1"></View>
         </View>
 
-        <TouchableOpacity className="bg-white rounded-lg py-4 border border-gray-300 flex-row items-center justify-center">
+        <TouchableOpacity className="bg-white rounded-lg py-4 border border-gray-300 flex-row items-center justify-center" onPress={handleGoogleSignUp} disabled={isGoogleAuthInProgress}>
           <View className="mr-2">
             <FontAwesome name="google" size={18} color="#4285F4" />
           </View>
-          <Text className="text-gray-700">Daftar dengan Google</Text>
+          <Text className="text-gray-700">{isGoogleAuthInProgress ? "Menghubungkan..." : "Daftar dengan Google"}</Text>
         </TouchableOpacity>
 
         <View className="flex-row justify-center mt-6">
