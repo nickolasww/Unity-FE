@@ -6,36 +6,40 @@ import { Ionicons } from '@expo/vector-icons';
 
 const TabLayout = () => {
   return (
-<Tabs >
+<Tabs screenOptions={{
+      headerTitleStyle: {fontWeight: "normal"},
+      headerTitleAlign: "center",
+    }}>
 <Tabs.Screen
-        name="home"
+        name="beranda"
         options={{
-          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
-          ),
-          tabBarLabel: () => null,  // Menghilangkan label
+          ), 
         }}
       />
    <Tabs.Screen
-          name="localconnect" 
+          name="NuTracker" 
           options={{
-            headerShown: false,
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="clipboard-outline" size={size} color={color} />
             ),
-            tabBarLabel: () => null,  // Menghilangkan label
           }}
         />
-   {/* Smart Planner Tab */}
    <Tabs.Screen
-          name="smartplanner"
+          name="NutriLens"
           options={{
-            headerShown: false,
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="people-outline" size={size} color={color} />
             ),
-            tabBarLabel: () => null, 
+          }}
+        />
+         <Tabs.Screen
+          name="insight"
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="people-outline" size={size} color={color} />
+            ),
           }}
         />
    <Tabs.Screen
@@ -45,7 +49,6 @@ const TabLayout = () => {
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="person-outline" size={size} color={color} />
             ),
-            tabBarLabel: () => null,  
           }}  
         />
 </Tabs>

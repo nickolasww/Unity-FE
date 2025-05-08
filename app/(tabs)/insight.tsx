@@ -103,7 +103,7 @@ const localTours: ItemType[] = [
   },
 ]
 
-export default function LocalConnect() {
+export default function insight() {
   // Use the router from expo-router instead of navigation
   const router = useRouter()
   const [selectedLocation, setSelectedLocation] = useState("Yogyakarta")
