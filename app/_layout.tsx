@@ -2,6 +2,7 @@ import { StyleSheet, View, Text, useColorScheme } from 'react-native'
 import { Stack } from 'expo-router';
 import {Colors} from "../constants/color"
 import "../global.css"
+import ResepKuDetail from './nutrilens/resepkuDetail';
 
 const RootLayout = () => {
   const colorSchema = useColorScheme()
@@ -19,6 +20,7 @@ const RootLayout = () => {
       <Stack.Screen name="auth/register" options={{ title: "Sing Up"  , headerShown: false}} />
       <Stack.Screen name="(tabs)" options={{title: "index" , headerShown: false}}/>
       <Stack.Screen name="nutrilens" options={{title: "NutriLens"}} />
+      <Stack.Screen name="nutrilens/resepkuDetail"  options={{title: "ResepKu"}} />
     </Stack>
   )
 }
