@@ -1,51 +1,56 @@
 import React from 'react'
-import { View, Text, } from 'react-native'
+import { View, Text, Image } from 'react-native'
 import { Tabs } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons';
-
 
 const TabLayout = () => {
   return (
-<Tabs >
+
+<Tabs screenOptions={{
+      headerTitleStyle: {fontWeight: "normal"},
+      headerTitleAlign: "center",
+      tabBarActiveTintColor: "#FE572F",
+      tabBarInactiveTintColor: "#898D9E",
+    }}>
 <Tabs.Screen
-        name="home"
+        name="beranda"
         options={{
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
-          ),
-          tabBarLabel: () => null,  // Menghilangkan label
+          tabBarIcon: ({ focused, size }) => (
+            <Image source={require("../../assets/home.png")} style={{ width: size, height: size, tintColor: focused ? '#FE572F' : '#898D9E'}} />
+          ), 
         }}
       />
    <Tabs.Screen
-          name="localconnect" 
+          name="NuTracker" 
           options={{
-            headerShown: false,
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="clipboard-outline" size={size} color={color} />
+            tabBarIcon: ({ focused, size }) => (
+              <Image source={require("../../assets/NutrackerImg.png")} style={{ width: size, height: size, tintColor: focused ? '#FE572F' : '#898D9E' }} />
             ),
-            tabBarLabel: () => null,  // Menghilangkan label
           }}
         />
-   {/* Smart Planner Tab */}
    <Tabs.Screen
-          name="smartplanner"
+          name="NutriLens"
           options={{
-            headerShown: false,
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="people-outline" size={size} color={color} />
+            tabBarIcon: ({ focused, size }) => (
+              <Image source={require("../../assets/NutriLensImg.png")} style={{ width: size, height: size, tintColor: focused ? '#FE572F' : '#898D9E'  }} />
             ),
-            tabBarLabel: () => null, 
+          }}
+        />
+         <Tabs.Screen
+          name="insight"
+          options={{
+            tabBarIcon: ({ focused, size }) => (
+              <Image source={require("../../assets/insightImg.png")} style={{ width: size, height: size, tintColor: focused ? '#FE572F' : '#898D9E' }} />
+
+            ),
           }}
         />
    <Tabs.Screen
           name="profile"
           options={{
             headerShown: false,
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="person-outline" size={size} color={color} />
+            tabBarIcon: ({ size }) => (
+              <Image source={require("../../assets/ProfileImg.png")} style={{ width: size, height: size }} />
             ),
-            tabBarLabel: () => null,  
           }}  
         />
 </Tabs>
