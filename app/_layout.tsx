@@ -2,7 +2,6 @@ import { StyleSheet, View, Text, useColorScheme } from 'react-native'
 import { Stack } from 'expo-router';
 import {Colors} from "../constants/color"
 import "../global.css"
-import ResepKuDetail from './nutrilens/resepkuDetail';
 
 const RootLayout = () => {
   const colorSchema = useColorScheme()

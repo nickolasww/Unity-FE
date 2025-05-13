@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { MagnifyingGlassIcon, EllipsisHorizontalIcon, PencilSquareIcon } from 'react-native-heroicons/outline';
-import { HeartIcon, ChatBubbleLeftIcon, BookmarkIcon, ShareIcon, ChartBarIcon } from 'react-native-heroicons/outline';
+import { PencilSquareIcon } from 'react-native-heroicons/outline';
 import KomunitasList from '../insight/komunitaslist';
 import ArtikelList from '../insight/artikellist';
 

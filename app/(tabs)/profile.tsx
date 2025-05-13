@@ -1,18 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
-  PencilIcon, 
-  Cog6ToothIcon, 
-  QuestionMarkCircleIcon,
-  ShieldCheckIcon,
-  InformationCircleIcon,
   ArrowRightOnRectangleIcon
 } from 'react-native-heroicons/outline';
 
 export default function Profile() {
-  const navigation = useNavigation();
   const [userData, setUserData] = useState({
     name: 'Rizka Oktavia',
     username: '@rizka.oktavia',

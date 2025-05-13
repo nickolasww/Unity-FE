@@ -3,10 +3,7 @@ import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { HeartIcon, ChatBubbleLeftIcon, BookmarkIcon, ShareIcon, ChartBarIcon, EllipsisHorizontalIcon } from 'react-native-heroicons/outline';
 import { PencilSquareIcon } from 'react-native-heroicons/solid';
 
-export default function KomunitasDetailList({ route, navigation }) {
-  // Tambahkan pengecekan untuk route dan route.params
-  const community = route?.params?.community || { name: 'Komunitas' };
-  
+export default function KomunitasDetailList() {
   const posts = [
     {
       id: 1,

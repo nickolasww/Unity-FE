@@ -1,8 +1,8 @@
-const API_BASE_URL = "https://hackathon-uc.iyh.my.id/api/api/";
+const API_BASE_URL = "https://1335-118-99-68-242.ngrok-free.app";
 
 export const loginUser = async (email: string, password: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/users/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -20,7 +20,7 @@ export const loginUser = async (email: string, password: string) => {
       throw new Error(data.message || "Login failed");
     }
 
-    const token = data.payload?.token;
+    const token =  data.payload?.token || data.token;
 
     if (!token) {
       console.error("Token not found in the response data.");
@@ -43,7 +43,7 @@ export const registerUser = async (name: string, email: string, password: string
   }
 
   try { 
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/users/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

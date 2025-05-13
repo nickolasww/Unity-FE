@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Calendar, Check } from 'react-native-feather';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import 'nativewind';
-import FullCalendar from '../nutracker/fullcalendar';
 import { useRouter } from 'expo-router';
 
 export default function PersonalisasiPage() {
