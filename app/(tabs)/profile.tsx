@@ -1,205 +1,140 @@
-import { StyleSheet, View, Text, Image, TouchableOpacity, ScrollView } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { Ionicons } from "@expo/vector-icons"
-
-const menuItems = [
-  {
-    id: "1",
-    title: "My Bookings",
-    icon: "calendar",
-  },
-  {
-    id: "2",
-    title: "Saved Places",
-    icon: "bookmark",
-  },
-  {
-    id: "3",
-    title: "Reviews",
-    icon: "star",
-  },
-  {
-    id: "4",
-    title: "Settings",
-    icon: "settings",
-  },
-  {
-    id: "5",
-    title: "Help Center",
-    icon: "help-circle",
-  },
-  {
-    id: "6",
-    title: "About",
-    icon: "information-circle",
-  },
-]
+import React, { useEffect, useState } from 'react';
+import { View, Text, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { 
+  PencilIcon, 
+  Cog6ToothIcon, 
+  QuestionMarkCircleIcon,
+  ShieldCheckIcon,
+  InformationCircleIcon,
+  ArrowRightOnRectangleIcon
+} from 'react-native-heroicons/outline';
+import { UserIcon, HomeIcon, BeakerIcon, CameraIcon, LightBulbIcon } from 'react-native-heroicons/solid';
 
 export default function Profile() {
+  const navigation = useNavigation();
+  const [userData, setUserData] = useState({
+    name: 'Rizka Oktavia',
+    username: '@rizka.oktavia',
+    profileImage: null
+  });
+
+  useEffect(() => {
+    // Mengambil data user dari AsyncStorage saat komponen dimuat
+    const getUserData = async () => {
+      try {
+        const storedUserData = await AsyncStorage.getItem('userData');
+        if (storedUserData) {
+          const parsedUserData = JSON.parse(storedUserData);
+          setUserData({
+            name: parsedUserData.name || 'Rizka Oktavia',
+            username: parsedUserData.username || '@rizka.oktavia',
+            profileImage: parsedUserData.profileImage || null
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    getUserData();
+  }, []);
+
+
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <ScrollView>
-        <View style={styles.header}>
-          <View style={styles.profileInfo}>
-            {/* <Image
-              source={{
-                uri: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Local%20Connect-T8YuujmPybJqJtjlrjt3WkZCGPh2Bi.png",
-              }}
-              style={styles.profileImage}
-            /> */}
-            <View>
-              <Text style={styles.profileName}>John Doe</Text>
-              <Text style={styles.profileEmail}>john.doe@example.com</Text>
+    <View className="flex-1 bg-orange-50">
+      {/* Status Bar Space */}
+      <View className="h-12" />
+      
+      {/* Profile Header */}
+      <View className="items-center px-6 pt-4 pb-8">
+        <View className="w-28 h-28 rounded-full overflow-hidden border-2 border-white shadow-md">
+          {userData.profileImage ? (
+            <Image 
+              // source={{ uri: userData.profileImage }} 
+              className="w-full h-full" 
+              resizeMode="cover"
+            />
+          ) : (
+            <Image 
+              // source={require('../assets/default-profile.png')} 
+              className="w-full h-full" 
+              resizeMode="cover"
+            />
+          )}
+        </View>
+        
+        <Text className="mt-4 text-2xl font-bold text-orange-500">{userData.name}</Text>
+        <Text className="text-orange-400">{userData.username}</Text>
+      </View>
+      
+      <ScrollView className="flex-1 p-5 bg-white rounded-t-3xl">
+        {/* Account Section */}
+        <View className="mb-6">
+          <Text className="text-gray-500 mb-2 text-base">Akun</Text>
+          
+          <TouchableOpacity 
+            className="flex-row items-center bg-white p-4 rounded-lg mb-2 border-2 border-gray-100"
+
+          >
+            <PencilIcon size={24} color="#6B7280" />
+            <Text className="ml-3 text-gray-800 font-medium">Ubah Profil</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            className="flex-row items-center bg-white p-4 rounded-2xl mb-2 border-2 border-gray-100"
+          >
+            <View className="w-6 h-6 items-center justify-center">
             </View>
-          </View>
-          <TouchableOpacity style={styles.editButton}>
-            <Text style={styles.editButtonText}>Edit Profile</Text>
+            <Text className="ml-3 text-gray-800 font-medium">Premium</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            className="flex-row items-center bg-white p-4 rounded-2xl border-2 border-gray-100"
+          >
+            <Cog6ToothIcon size={24} color="#6B7280" />
+            <Text className="ml-3 text-gray-800 font-medium">Pengaturan</Text>
           </TouchableOpacity>
         </View>
+        
+        {/* General Section */}
+        <View className="mb-6">
+          <Text className="text-gray-500 mb-2 text-base">Umum</Text>
+          
+          <TouchableOpacity 
+            className="flex-row items-center bg-white p-4 rounded-2xl mb-2 border-2 border-gray-100"
 
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>12</Text>
-            <Text style={styles.statLabel}>Trips</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>24</Text>
-            <Text style={styles.statLabel}>Reviews</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>36</Text>
-            <Text style={styles.statLabel}>Saved</Text>
-          </View>
+          >
+            <QuestionMarkCircleIcon size={24} color="#6B7280" />
+            <Text className="ml-3 text-gray-800 font-medium">Pusat Bantuan</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            className="flex-row items-center bg-white p-4 rounded-2xl mb-2 border-2 border-gray-100"
+
+          >
+            <ShieldCheckIcon size={24} color="#6B7280" />
+            <Text className="ml-3 text-gray-800 font-medium">Syarat dan Ketentuan</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            className="flex-row items-center bg-white p-4 rounded-2xl mb-2 border-2 border-gray-100"
+          >
+            <InformationCircleIcon size={24} color="#6B7280" />
+            <Text className="ml-3 text-gray-800 font-medium">Tentang</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            className="flex-row items-center bg-white p-4 rounded-2xl border-2 border-gray-100"
+            
+          >
+            <ArrowRightOnRectangleIcon size={24} color="#EF4444" />
+            <Text className="ml-3 text-red-500 font-medium">Keluar Akun</Text>
+          </TouchableOpacity>
         </View>
-
-        <View style={styles.menuContainer}>
-          {menuItems.map((item) => (
-            <TouchableOpacity key={item.id} style={styles.menuItem}>
-              {/* <View style={styles.menuIconContainer}>
-                <Ionicons name={item.icon} size={20} color="#8B2323" />
-              </View> */}
-              <Text style={styles.menuTitle}>{item.title}</Text>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <TouchableOpacity style={styles.logoutButton}>
-          <Ionicons name="log-out" size={20} color="#8B2323" />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
-  )
+      
+    </View>
+  );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f8f8",
-  },
-  header: {
-    padding: 20,
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  profileInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  profileImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 16,
-  },
-  profileName: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  profileEmail: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 4,
-  },
-  editButton: {
-    backgroundColor: "#8B2323",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-  },
-  editButtonText: {
-    color: "white",
-    fontWeight: "500",
-  },
-  statsContainer: {
-    flexDirection: "row",
-    backgroundColor: "white",
-    marginTop: 16,
-    paddingVertical: 16,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: "center",
-  },
-  statNumber: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#8B2323",
-  },
-  statLabel: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 4,
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: "#f0f0f0",
-  },
-  menuContainer: {
-    backgroundColor: "white",
-    marginTop: 16,
-    paddingVertical: 8,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  menuIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#f8f0f0",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  menuTitle: {
-    flex: 1,
-    fontSize: 16,
-  },
-  logoutButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 24,
-    marginBottom: 40,
-    paddingVertical: 12,
-    backgroundColor: "white",
-  },
-  logoutText: {
-    fontSize: 16,
-    color: "#8B2323",
-    fontWeight: "500",
-    marginLeft: 8,
-  },
-})

@@ -13,7 +13,6 @@ import { FullCalendar } from "../nutracker/fullcalendar"
 import AddItemSheet from "../../components/additem/additem"
 import { format, isToday } from "date-fns"
 import { id } from "date-fns/locale"
-import { useRouter } from "expo-router"
 
 // Define interfaces
 interface FoodItem {
@@ -61,7 +60,6 @@ interface NutritionData {
 }
 
 export default function NuTracker() {
-  const router = useRouter()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [modalVisible, setModalVisible] = useState(false)
   const [calendarVisible, setCalendarVisible] = useState(false)
@@ -226,11 +224,8 @@ export default function NuTracker() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
-      <View className="px-4 py-2">
-        <Text className="text-2xl font-bold text-center">NuTracker</Text>
-      </View>
 
-      <ScrollView className="flex-1 px-4">
+      <ScrollView className="flex-1 p-4">
         {/* Calendar Section */}
         <View className="bg-white rounded-xl p-4 mb-4">
           <TouchableOpacity className="flex-row items-center mb-2" >
