@@ -17,7 +17,7 @@ const Login = () => {
     try {
       if (email === "Test@example.com" && password === "Wewe31") {
         await AsyncStorage.setItem("authToken", "dummyToken") 
-        router.push("/beranda")
+        router.push("/personalisasi/personalisasipage")
       } else {
         Alert.alert("Login Failed", "Invalid credentials")
       }
