@@ -79,7 +79,7 @@ const FeaturedCards = () => {
     {
       id: "2",
       title: "EMBRACE CULTURAL HERITAGE",
-      image: require("../../assets/Embrace.png"),
+      // image: require("../../assets/Embrace.png"),
       buttonText: "DISCOVER NOW",
     },
     {

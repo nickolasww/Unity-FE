@@ -48,8 +48,8 @@ const TabLayout = () => {
           name="profile"
           options={{
             headerShown: false,
-            tabBarIcon: ({ size }) => (
-              <Image source={require("../../assets/ProfileImg.png")} style={{ width: size, height: size }} />
+            tabBarIcon: ({ focused, size }) => (
+              <Image source={require("../../assets/ProfileImg.png")}  style={{ width: size, height: size, tintColor: focused ? '#FE572F' : '#898D9E' }} />
             ),
           }}  
         />

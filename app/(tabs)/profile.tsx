@@ -10,7 +10,6 @@ import {
   InformationCircleIcon,
   ArrowRightOnRectangleIcon
 } from 'react-native-heroicons/outline';
-import { UserIcon, HomeIcon, BeakerIcon, CameraIcon, LightBulbIcon } from 'react-native-heroicons/solid';
 
 export default function Profile() {
   const navigation = useNavigation();
@@ -78,7 +77,9 @@ export default function Profile() {
             className="flex-row items-center bg-white p-4 rounded-lg mb-2 border-2 border-gray-100"
 
           >
-            <PencilIcon size={24} color="#6B7280" />
+             <Image 
+                source={require('../../assets/EditProfileIcon.png')} 
+              />
             <Text className="ml-3 text-gray-800 font-medium">Ubah Profil</Text>
           </TouchableOpacity>
           
@@ -86,6 +87,11 @@ export default function Profile() {
             className="flex-row items-center bg-white p-4 rounded-2xl mb-2 border-2 border-gray-100"
           >
             <View className="w-6 h-6 items-center justify-center">
+              <Image 
+                source={require('../../assets/DiamondIcon.png')} 
+                className="w-full h-full" 
+                resizeMode="contain"
+              />
             </View>
             <Text className="ml-3 text-gray-800 font-medium">Premium</Text>
           </TouchableOpacity>
@@ -93,7 +99,9 @@ export default function Profile() {
           <TouchableOpacity 
             className="flex-row items-center bg-white p-4 rounded-2xl border-2 border-gray-100"
           >
-            <Cog6ToothIcon size={24} color="#6B7280" />
+            <Image 
+                source={require('../../assets/SettingIcon.png')} 
+              />
             <Text className="ml-3 text-gray-800 font-medium">Pengaturan</Text>
           </TouchableOpacity>
         </View>
@@ -106,7 +114,9 @@ export default function Profile() {
             className="flex-row items-center bg-white p-4 rounded-2xl mb-2 border-2 border-gray-100"
 
           >
-            <QuestionMarkCircleIcon size={24} color="#6B7280" />
+            <Image 
+                source={require('../../assets/BantuanIcon.png')} 
+              />
             <Text className="ml-3 text-gray-800 font-medium">Pusat Bantuan</Text>
           </TouchableOpacity>
           
@@ -114,14 +124,18 @@ export default function Profile() {
             className="flex-row items-center bg-white p-4 rounded-2xl mb-2 border-2 border-gray-100"
 
           >
-            <ShieldCheckIcon size={24} color="#6B7280" />
+            <Image 
+                source={require('../../assets/ShieldIcon.png')} 
+              />
             <Text className="ml-3 text-gray-800 font-medium">Syarat dan Ketentuan</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
             className="flex-row items-center bg-white p-4 rounded-2xl mb-2 border-2 border-gray-100"
           >
-            <InformationCircleIcon size={24} color="#6B7280" />
+            <Image 
+                source={require('../../assets/TentangIcon.png')} 
+              />
             <Text className="ml-3 text-gray-800 font-medium">Tentang</Text>
           </TouchableOpacity>
           
