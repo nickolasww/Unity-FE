@@ -41,11 +41,6 @@ export const RecipeRecommendationsScreen: React.FC<RecipeRecommendationsScreenPr
                   className="flex-row items-center py-3 border-b border-gray-200"
                   onPress={() => onRecipeSelect(recipe)}
                 >
-                  <Image
-                    source={require("../../assets/LoadingImg.png")}
-                    className="w-16 h-16 rounded-lg mr-3"
-                    resizeMode="cover"
-                  />
                   <View className="flex-1">
                     <Text className="font-bold">{recipe.name}</Text>
                     <View className="flex-row mt-1">
@@ -83,11 +78,6 @@ export const RecipeRecommendationsScreen: React.FC<RecipeRecommendationsScreenPr
                 className="flex-row items-center py-3 px-4 border-b border-gray-200"
                 onPress={() => onRecipeSelect(recipe)}
               >
-                <Image
-                  source={require("../../assets/LoadingImg.png")}
-                  className="w-16 h-16 rounded-lg mr-3"
-                  resizeMode="cover"
-                />
                 <View className="flex-1">
                   <Text className="font-bold">{recipe.name}</Text>
                   <View className="flex-row mt-1">

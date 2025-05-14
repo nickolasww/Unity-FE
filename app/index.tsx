@@ -1,6 +1,7 @@
+"use client"
+
 import { useState, useRef, useEffect } from "react"
 import {
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
@@ -12,7 +13,7 @@ import {
   Image,
   Animated,
 } from "react-native"
-import { Link, router } from "expo-router"
+import { router } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 
 const { width, height } = Dimensions.get("window")
@@ -22,7 +23,7 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState(0)
   const flatListRef = useRef(null)
   const fadeAnim = useRef(new Animated.Value(0)).current
-  
+
   // Logo fade-in animation
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -30,37 +31,38 @@ export default function App() {
       duration: 1500,
       useNativeDriver: true,
     }).start()
-    
+
     // Hide splash screen after 2.5 seconds
     const timer = setTimeout(() => {
       setShowSplash(false)
     }, 2500)
-    
+
     return () => clearTimeout(timer)
   }, [])
-  
+
   const slides = [
     {
       id: "1",
       title: "Temukan Rahasia Nutrisi dalam Sekali Scan",
-      image: require("../assets/BeachLanding.png"), 
-      subtitle: "Ketahui nutrisi makanan dengan NutriKu dan dapatkan rekomendasi resep sesuai bahan yang kamu miliki dengan ResepKu",
+      image: require("../assets/Splash1.png"),
+      subtitle:
+        "Ketahui nutrisi makanan dengan NutriKu dan dapatkan rekomendasi resep sesuai bahan yang kamu miliki dengan ResepKu",
       showBackButton: false,
     },
     {
       id: "2",
       title: "Jalan Mudah Menuju Gizi Seimbang",
-      image: require("../assets/GunungLanding.png"), 
+      image: require("../assets/Splash2.png"),
       subtitle: "Nutracker yang memahami kebutuhan tubuhmu. Catat apa yang kamu makan, pantau asupan nutrisimu",
       showBackButton: true,
     },
     {
       id: "3",
-      image: require("../assets/MomLanding.png"),
       title: "Konsultasi Personal untuk Hasil Maksimal",
-      subtitle: "Dapatkan nasihat dari ahli untuk mengoptimalkan pola makanmu dan mencapai tujuan kesehatanmu.", 
+      image: require("../assets/splash3.png"),
+      subtitle: "Dapatkan nasihat dari ahli untuk mengoptimalkan pola makanmu dan mencapai tujuan kesehatanmu.",
       showBackButton: true,
-    }
+    },
   ]
 
   const handleNext = () => {
@@ -93,11 +95,7 @@ export default function App() {
       <View style={styles.splashContainer}>
         <StatusBar barStyle="dark-content" />
         <Animated.View style={{ opacity: fadeAnim }}>
-          <Image 
-            source={require('../assets/nutripath-logo.png')} 
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <Image source={require("../assets/nutripath-logo.png")} style={styles.logo} resizeMode="contain" />
         </Animated.View>
       </View>
     )
@@ -106,51 +104,40 @@ export default function App() {
   const renderItem = ({ item, index }) => {
     return (
       <View style={styles.slide}>
-        <ImageBackground
-          source={item.image}
-          style={styles.backgroundImage}
-        >
-          <SafeAreaView style={styles.safeArea}>
-            <View style={styles.header}>
-              {item.showBackButton ? (
-                <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-                  <Ionicons name="chevron-back" size={24} color="white" />
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.headerLeft} />
-              )}
-              <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-                <Text style={styles.skipText}>Lewati</Text>
-                <Ionicons name="arrow-forward" size={16} color="#FF5733" style={{ marginLeft: 4 }} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.contentContainer}>
-              <View style={styles.paginationContainer}>
-                {slides.map((_, dotIndex) => (
-                  <View
-                    key={dotIndex}
-                    style={[
-                      styles.paginationDot,
-                      index === dotIndex && styles.paginationDotActive,
-                    ]}
-                  />
-                ))}
-              </View>
-
-              <View style={styles.textContainer}>
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.subtitle}>{item.subtitle}</Text>
-              </View>
-
-              <TouchableOpacity style={styles.continueButton} onPress={handleNext}>
-                <Text style={styles.continueButtonText}>
-                  {index === slides.length - 1 ? "Mulai" : "Lanjut"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </SafeAreaView>
+        <StatusBar barStyle="dark-content" />
+        <ImageBackground source={item.image} style={styles.backgroundImage}>
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+              <Text style={styles.skipText}>Lewati</Text>
+              <Ionicons name="arrow-forward" size={16} color="#FF5733" style={{ marginLeft: 4 }} />
+            </TouchableOpacity>
+          </View>
         </ImageBackground>
+
+        <View style={styles.bottomContainer}>
+          <View style={styles.paginationContainer}>
+            {slides.map((_, dotIndex) => (
+              <View
+                key={dotIndex}
+                style={[
+                  styles.paginationDot,
+                  index === dotIndex ? styles.paginationDotActive : styles.paginationDotInactive,
+                ]}
+              />
+            ))}
+          </View>
+
+          <View style={styles.textContainer}>
+            <Text style={styles.title}>{item.title}</Text>
+            <Text style={styles.subtitle}>{item.subtitle}</Text>
+          </View>
+
+          <TouchableOpacity style={styles.continueButton} onPress={handleNext}>
+            <Text style={styles.continueButtonText}>{index === slides.length - 1 ? "Mulai" : "Lanjut"}</Text>
+          </TouchableOpacity>
+
+          <View style={styles.bottomIndicator} />
+        </View>
       </View>
     )
   }
@@ -191,11 +178,9 @@ const styles = StyleSheet.create({
   // Splash screen styles
   splashContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFF5F2', // Light background color
-    // Gradient effect can be achieved with a LinearGradient component from expo-linear-gradient
-    // or with an ImageBackground with a gradient image
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FFF5F2", 
   },
   logo: {
     width: 200,
@@ -204,26 +189,19 @@ const styles = StyleSheet.create({
   slide: {
     width,
     height,
+    backgroundColor: "white",
   },
   backgroundImage: {
-    flex: 1,
+    height: height * 0.6, 
+    width: width,
     resizeMode: "cover",
-  },
-  safeArea: {
-    flex: 1,
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  headerLeft: {
-    width: 40,
-  },
-  backButton: {
-    padding: 10,
+    paddingTop: 20,
   },
   skipButton: {
     padding: 10,
@@ -235,15 +213,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
   },
-  contentContainer: {
-    flex: 1,
-    justifyContent: "flex-end",
-    paddingBottom: 50,
+  bottomContainer: {
+    height: height * 0.4, // Bottom container takes 40% of screen height
+    backgroundColor: "white",
+    paddingVertical: 30,
     paddingHorizontal: 20,
+    justifyContent: "space-between",
   },
   textContainer: {
-    marginBottom: 40,
-    paddingHorizontal: 20,
+    marginVertical: 20,
+    paddingHorizontal: 10,
   },
   title: {
     color: "#333",
@@ -261,20 +240,25 @@ const styles = StyleSheet.create({
   paginationContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: 30,
+    marginBottom: 10,
   },
   paginationDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#DDD",
     marginHorizontal: 4,
   },
   paginationDotActive: {
     backgroundColor: "#FF5733",
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  paginationDotInactive: {
+    backgroundColor: "#DDD",
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   continueButton: {
     backgroundColor: "#FF5733",
@@ -282,11 +266,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 10,
   },
   continueButtonText: {
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
     textAlign: "center",
+  },
+  bottomIndicator: {
+    width: 40,
+    height: 5,
+    backgroundColor: "#333",
+    borderRadius: 3,
+    alignSelf: "center",
+    marginTop: 20,
   },
 })

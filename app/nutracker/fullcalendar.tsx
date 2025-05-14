@@ -1,7 +1,18 @@
+"use client"
+
 import type React from "react"
 import { useState } from "react"
 import { View, Text, Modal, TouchableOpacity } from "react-native"
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns"
+import {
+  format,
+  addMonths,
+  subMonths,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameDay,
+  isFuture,
+} from "date-fns"
 import { ChevronLeft, ChevronRight, X } from "lucide-react-native"
 
 interface FullCalendarProps {
@@ -9,9 +20,16 @@ interface FullCalendarProps {
   onClose: () => void
   selectedDate: Date
   onDateSelected: (date: Date) => void
+  availableDates?: Date[] // Add this prop to track available dates
 }
 
-export const FullCalendar: React.FC<FullCalendarProps> = ({ visible, onClose, selectedDate, onDateSelected }) => {
+export const FullCalendar: React.FC<FullCalendarProps> = ({
+  visible,
+  onClose,
+  selectedDate,
+  onDateSelected,
+  availableDates = [], // Default to empty array if not provided
+}) => {
   const [currentMonth, setCurrentMonth] = useState(new Date())
 
   const onMonthChange = (direction: "prev" | "next") => {
@@ -32,10 +50,17 @@ export const FullCalendar: React.FC<FullCalendarProps> = ({ visible, onClose, se
     )
   }
 
+  // Check if a date is available (has data)
+  const isDateAvailable = (date: Date) => {
+    // In a real app, you would check if this date has data
+    // For now, we'll just check if it's in the availableDates array
+    return availableDates.some((availableDate) => isSameDay(availableDate, date))
+  }
+
   const renderDates = () => {
     const monthStart = startOfMonth(currentMonth)
     const monthEnd = endOfMonth(currentMonth)
-    const dateRange = eachDayOfInterval({ start: monthStart, end: monthEnd }) // Sudah menggunakan date-fns dengan benar
+    const dateRange = eachDayOfInterval({ start: monthStart, end: monthEnd })
 
     // Get the day of the week for the first day (0 = Sunday, 1 = Monday, etc.)
     const startDay = monthStart.getDay()
@@ -68,20 +93,30 @@ export const FullCalendar: React.FC<FullCalendarProps> = ({ visible, onClose, se
 
               const isSelected = isSameDay(day, selectedDate)
               const isToday = isSameDay(day, new Date())
+              const isFutureDate = isFuture(day)
+              const isAvailable = isDateAvailable(day)
+
+              // Determine if the date should be disabled
+              const isDisabled = isFutureDate || !isAvailable
 
               return (
                 <TouchableOpacity
                   key={`day-${day.getTime()}`}
                   className={`w-10 h-10 items-center justify-center rounded-full
-                    ${isSelected ? "bg-orange-500" : isToday ? "bg-orange-100" : ""}`}
+                    ${isSelected ? "bg-orange-500" : isToday ? "bg-orange-100" : ""}
+                    ${isDisabled ? "opacity-30" : ""}`}
                   onPress={() => {
-                    onDateSelected(day)
-                    onClose()
+                    if (!isDisabled) {
+                      onDateSelected(day)
+                      onClose()
+                    }
                   }}
+                  disabled={isDisabled}
                 >
                   <Text
                     className={`text-base
-                      ${isSelected ? "text-white font-bold" : isToday ? "text-orange-500 font-medium" : "text-black"}`}
+                      ${isSelected ? "text-white font-bold" : isToday ? "text-orange-500 font-medium" : "text-black"}
+                      ${isDisabled ? "text-gray-400" : ""}`}
                   >
                     {format(day, "d")}
                   </Text>

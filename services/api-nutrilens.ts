@@ -2,7 +2,7 @@
 import type { FoodItem, Recipe } from "../utils/foodtypes"
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = "https://nutripath.bccdev.id/api/v1/" 
+const API_BASE_URL = "https://nutripath.bccdev.id/api/v1" 
 
 // Function to analyze food from image
 export const analyzeFoodImage = async (imageUri: string): Promise<FoodItem[]> => {
@@ -19,7 +19,7 @@ export const analyzeFoodImage = async (imageUri: string): Promise<FoodItem[]> =>
     formData.append("scan_type", "nutriku")
 
     // Send the image to the backend for analysis
-    const response = await fetch(`${API_BASE_URL}gemini/analyze`, {
+    const response = await fetch(`${API_BASE_URL}/gemini/analyze`, {
       method: "POST",
       body: formData,
       headers: {
@@ -27,6 +27,9 @@ export const analyzeFoodImage = async (imageUri: string): Promise<FoodItem[]> =>
          Authorization: `Bearer ${token}`,
       },
     })
+
+    const responseText = await response.text();
+    console.log("Raw API Response Text:", responseText);
 
     console.log("API Response Status:", response.status)
 
@@ -76,7 +79,7 @@ export const saveFoodHistory = async (foods: FoodItem[], meal_time: string): Pro
     // Extract only the food IDs from the foods array
     const foodIds = foods.map((food) => Number(food.id))
 
-    const response = await fetch(`${API_BASE_URL}foods/save-histories`, {
+    const response = await fetch(`${API_BASE_URL}/foods/save-histories`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -89,6 +92,9 @@ export const saveFoodHistory = async (foods: FoodItem[], meal_time: string): Pro
         "date": new Date().toISOString() ,
       }),
     })
+
+    const responseText = await response.text();
+    console.log("Raw API Response Text:", responseText);
 
     console.log("Save food history response status:", response.status)
 
@@ -122,7 +128,7 @@ export const analyzeIngredientsImage = async (imageUri: string): Promise<FoodIte
      formData.append("scan_type", "resepku")
 
     // Send the image to the backend for analysis
-    const response = await fetch(`${API_BASE_URL}gemini/analyze`, {
+    const response = await fetch(`${API_BASE_URL}/gemini/analyze`, {
       method: "POST",
       body: formData,
       headers: {
@@ -130,6 +136,9 @@ export const analyzeIngredientsImage = async (imageUri: string): Promise<FoodIte
         "Authorization": `Bearer ${token}`,
       },
     })
+
+    const responseText = await response.text();
+    console.log("Raw API Response Text:", responseText);
 
     if (!response.ok) {
       console.error(`Server responded with ${response.status}`)
@@ -176,7 +185,7 @@ export const getRecipeRecommendations = async (foods: FoodItem[]): Promise<Recip
 
     const foodIds = foods.map((food) => Number(food.id))
 
-    const response = await fetch(`${API_BASE_URL}gemini/create-food`, {
+    const response = await fetch(`${API_BASE_URL}/gemini/create-food`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -186,6 +195,8 @@ export const getRecipeRecommendations = async (foods: FoodItem[]): Promise<Recip
         "food_ids": foodIds,
       }),
     })
+    const responseText = await response.text();
+    console.log("Raw API Response Text:", responseText);
 
     console.log("API Response Status:", response.status)
 
@@ -270,7 +281,7 @@ export const saveRecipeToUserHistory = async (foods: FoodItem[]): Promise<boolea
     // Extract only the food IDs from the foods array
     const foodIds = foods.map((food) => Number(food.id))
 
-    const response = await fetch(`${API_BASE_URL}foods/add-bookmark`, {
+    const response = await fetch(`${API_BASE_URL}/foods/add-bookmark`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -278,6 +289,9 @@ export const saveRecipeToUserHistory = async (foods: FoodItem[]): Promise<boolea
       },
       body: JSON.stringify({ "food_ids": foodIds, }),
     })
+
+    const responseText = await response.text();
+    console.log("Raw API Response Text:", responseText);
 
      console.log("Save food history response status:", response.status)
 

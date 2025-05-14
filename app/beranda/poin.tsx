@@ -75,7 +75,7 @@ export default function PoinScreen() {
 function VoucherCard({ image, provider, title, points, isEmpty = false }) {
   return (
     <View style={styles.voucherCard}>
-      <Image source={{ uri: image }} style={styles.voucherImage} resizeMode="cover" />
+      <Image source={require("../../assets/Voucher.png")}  style={styles.voucherImage} resizeMode="cover" />
       <View style={styles.voucherContent}>
         {!isEmpty ? (
           <>
@@ -83,7 +83,7 @@ function VoucherCard({ image, provider, title, points, isEmpty = false }) {
             <Text style={styles.voucherTitle}>{title}</Text>
             <View style={styles.voucherFooter}>
               <View style={styles.pointsWrapper}>
-                {/* <Image source={require("../assets/coin.png")} style={styles.voucherCoinIcon} /> */}
+                <Image source={require("../../assets/Coin.png")} style={styles.voucherCoinIcon} />
                 <Text style={styles.voucherPointsText}>{points}</Text>
               </View>
               <TouchableOpacity style={styles.redeemButton}>

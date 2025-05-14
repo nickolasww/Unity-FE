@@ -11,9 +11,9 @@ import { AddFoodModal } from "../nutracker/addfoodmodal"
 import { CalendarIcon } from "../nutracker/calendaricon"
 import { FullCalendar } from "../nutracker/fullcalendar"
 import AddItemSheet from "../../components/additem/additem"
-import { format, isToday } from "date-fns"
+import { format, isToday, isFuture } from "date-fns"
 import { id } from "date-fns/locale"
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AlertTriangle } from "lucide-react-native"
 
 // Define interfaces
 interface FoodItem {
@@ -91,7 +91,57 @@ interface TrackerData {
 }
 
 // API URL - use the provided endpoint
-const API_URL = "https://nutripath.bccdev.id/api/v1/trackers/get-tracker"
+const API_URL = "https://de43-118-99-68-242.ngrok-free.app/trackers/get-tracker"
+
+// Default nutrition data
+const defaultNutritionData: NutritionData = {
+  calories: {
+    current: 0,
+    target: 2000,
+  },
+  carbs: {
+    current: 0,
+    target: 300,
+    color: "purple",
+  },
+  protein: {
+    current: 0,
+    target: 120,
+    color: "blue",
+  },
+  fat: {
+    current: 0,
+    target: 67,
+    color: "orange",
+  },
+  fiber: {
+    current: 0,
+    target: 25,
+    color: "green",
+  },
+}
+
+// Default meals
+const defaultMeals: Meal[] = [
+  {
+    type: "Sarapan",
+    icon: "🍳",
+    calories: 0,
+    items: [],
+  },
+  {
+    type: "Makan Siang",
+    icon: "🍽️",
+    calories: 0,
+    items: [],
+  },
+  {
+    type: "Makan Malam",
+    icon: "🌙",
+    calories: 0,
+    items: [],
+  },
+]
 
 export default function NuTracker() {
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -102,82 +152,51 @@ export default function NuTracker() {
   const [isLoading, setIsLoading] = useState(true)
   const [isError, setIsError] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
+  const [availableDates, setAvailableDates] = useState<Date[]>([new Date()])
+  const [hasData, setHasData] = useState(false)
 
   // State untuk menyimpan data makanan
-  const [meals, setMeals] = useState<Meal[]>([
-    {
-      type: "Sarapan",
-      icon: "🍳",
-      calories: 0,
-      items: [],
-    },
-    {
-      type: "Makan Siang",
-      icon: "🍽️",
-      calories: 0,
-      items: [],
-    },
-    {
-      type: "Makan Malam",
-      icon: "🌙",
-      calories: 0,
-      items: [],
-    },
-  ])
+  const [meals, setMeals] = useState<Meal[]>(defaultMeals)
 
   // State untuk menyimpan data nutrisi
-  const [nutritionData, setNutritionData] = useState<NutritionData>({
-    calories: {
-      current: 0,
-      target: 2000,
-    },
-    carbs: {
-      current: 0,
-      target: 300,
-      color: "purple",
-    },
-    protein: {
-      current: 0,
-      target: 120,
-      color: "blue",
-    },
-    fat: {
-      current: 0,
-      target: 67,
-      color: "orange",
-    },
-    fiber: {
-      current: 0,
-      target: 25,
-      color: "green",
-    },
-  })
+  const [nutritionData, setNutritionData] = useState<NutritionData>(defaultNutritionData)
 
   // Fetch data from API based on selected date
   useEffect(() => {
     fetchNutritionData()
   }, [selectedDate])
 
+  // Fetch available dates (this would be a separate API call in a real app)
+  useEffect(() => {
+    // In a real app, you would fetch available dates from an API
+    // For now, we'll just use today's date as available
+    setAvailableDates([new Date()])
+  }, [])
+
   const fetchNutritionData = async () => {
     setIsLoading(true)
     setIsError(false)
+    setHasData(false)
 
     try {
-      const token = await AsyncStorage.getItem("authToken")
       // Format date for API request
       const formattedDate = format(selectedDate, "yyyy-MM-dd")
 
       // Fetch data from the provided API endpoint
-      const response = await fetch(`${API_URL}?date=${formattedDate}`, { 
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-           Authorization: `Bearer ${token}`,
-
-        },
-      })
+      const response = await fetch(`${API_URL}?date=${formattedDate}`)
 
       if (!response.ok) {
+        // If response is 404, it means no data for this date
+        if (response.status === 404) {
+          setIsError(true)
+          setErrorMessage("Maaf, anda belum pernah scan makanan")
+          // Reset to default values
+          setMeals(defaultMeals)
+          setNutritionData(defaultNutritionData)
+          setHasData(false)
+          setIsLoading(false)
+          return
+        }
         throw new Error(`API request failed with status ${response.status}`)
       }
 
@@ -186,13 +205,18 @@ export default function NuTracker() {
       // Check if API response is successful
       if (data.message === "success") {
         updateDataFromAPI(data)
+        setHasData(true)
       } else {
         throw new Error("Failed to fetch nutrition data")
       }
     } catch (error) {
       console.error("Error fetching nutrition data:", error)
       setIsError(true)
-      setErrorMessage("Gagal memuat data nutrisi. Silakan coba lagi.")
+      setErrorMessage("Maaf, anda belum pernah scan makanan")
+      // Reset to default values
+      setMeals(defaultMeals)
+      setNutritionData(defaultNutritionData)
+      setHasData(false)
     } finally {
       setIsLoading(false)
     }
@@ -303,8 +327,15 @@ export default function NuTracker() {
 
   // Handle date selection and fetch new data
   const handleDateSelected = (date: Date) => {
+    // Don't allow selecting future dates
+    if (isFuture(date)) {
+      Alert.alert("Perhatian", "Tidak dapat memilih tanggal di masa depan")
+      return
+    }
+
+    // In a real app, you would check if the date is in availableDates
+    // For now, we'll just set the date and let the API handle it
     setSelectedDate(date)
-    // Data will be fetched in the useEffect that depends on selectedDate
   }
 
   // Fungsi untuk menambahkan item makanan baru
@@ -403,19 +434,6 @@ export default function NuTracker() {
     )
   }
 
-  // Show error state
-  if (isError) {
-    return (
-      <SafeAreaView className="flex-1 bg-gray-100 justify-center items-center p-4">
-        <Text className="text-red-500 text-lg mb-2">Error</Text>
-        <Text className="text-gray-700 text-center mb-4">{errorMessage}</Text>
-        <TouchableOpacity className="bg-orange-500 py-3 px-6 rounded-lg" onPress={handleRetry}>
-          <Text className="text-white font-medium">Coba Lagi</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    )
-  }
-
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
       <ScrollView className="flex-1 p-4">
@@ -428,6 +446,14 @@ export default function NuTracker() {
           <CalendarStrip selectedDate={selectedDate} onDateSelected={handleDateSelected} />
         </View>
 
+        {/* Error Message (if any) */}
+        {isError && (
+          <View className="bg-orange-50 rounded-xl p-4 mb-4 flex-row items-center">
+            <AlertTriangle size={20} color="#FF5733" />
+            <Text className="ml-2 text-orange-700">{errorMessage}</Text>
+          </View>
+        )}
+
         {/* Nutrition Summary */}
         <View className="bg-white rounded-xl p-4 mb-4">
           <View className="flex-row">
@@ -439,7 +465,7 @@ export default function NuTracker() {
             </View>
           </View>
 
-          {isCalorieExceeded && (
+          {isCalorieExceeded && hasData && (
             <View className="mt-2 bg-yellow-50 p-2 rounded-lg flex-row items-center">
               <Text className="text-yellow-700 text-xs">⚠️ Total kalori melebihi target harian</Text>
             </View>
@@ -475,6 +501,7 @@ export default function NuTracker() {
         onClose={() => setCalendarVisible(false)}
         selectedDate={selectedDate}
         onDateSelected={handleDateSelected}
+        availableDates={availableDates}
       />
     </SafeAreaView>
   )
