@@ -44,3 +44,5 @@ export const MealSelector: React.FC<MealSelectorProps> = ({
     </View>
   )
 }
+
+export default MealSelector

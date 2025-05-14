@@ -12,6 +12,7 @@ interface RecipeDetailScreenProps {
   onSave: () => void
 }
 
+// Update RecipeDetailScreen to include steps tab
 export const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
   recipe,
   activeTab,
@@ -26,7 +27,6 @@ export const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
           <TouchableOpacity onPress={onBack} className="mr-2">
             <Ionicons name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text className="text-xl font-bold">ResepKu</Text>
           <View className="flex-1 items-end">
             <TouchableOpacity>
               <Ionicons name="bookmark-outline" size={24} color="#000" />
@@ -100,26 +100,33 @@ export const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
             {/* Tab Content */}
             {activeTab === "Bahan-bahan" && (
               <View>
-                {recipe.ingredients?.map((ingredient: string, index: number) => (
-                  <View key={index} className="flex-row items-center mb-2">
-                    <Text className="text-sm">• {ingredient}</Text>
-                  </View>
-                ))}
+                {recipe.ingredients && recipe.ingredients.length > 0 ? (
+                  recipe.ingredients.map((ingredient: string, index: number) => (
+                    <View key={index} className="flex-row items-center mb-2">
+                      <Text className="text-sm">• {ingredient}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text className="text-gray-500 italic">Tidak ada bahan yang tersedia.</Text>
+                )}
               </View>
             )}
 
             {activeTab === "Cara Membuat" && (
               <View>
-                <Text className="text-gray-500 italic">Cara membuat akan segera hadir!</Text>
+                {recipe.steps && recipe.steps.length > 0 ? (
+                  recipe.steps.map((step: string, index: number) => (
+                    <View key={index} className="mb-3">
+                      <Text className="text-sm">{step}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text className="text-gray-500 italic">Cara membuat akan segera hadir!</Text>
+                )}
               </View>
             )}
           </View>
         </ScrollView>
-
-        {/* Save Button */}
-        <TouchableOpacity className="bg-green-500 m-4 py-3 rounded-lg items-center" onPress={onSave}>
-          <Text className="text-white font-bold">Simpan Resep</Text>
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   )

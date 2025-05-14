@@ -22,6 +22,7 @@ export interface FoodItem {
   ingredients?: string[]
   cookTime?: string
   difficulty?: string
+  steps?: string[] 
 }
 
 export const defaultRecipeData = { 

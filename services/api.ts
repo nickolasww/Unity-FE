@@ -1,4 +1,6 @@
-const API_BASE_URL = "https://1335-118-99-68-242.ngrok-free.app";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const API_BASE_URL = "https://de43-118-99-68-242.ngrok-free.app";
 
 export const loginUser = async (email: string, password: string) => {
   try {
@@ -10,9 +12,23 @@ export const loginUser = async (email: string, password: string) => {
       body: JSON.stringify({ email, password }),
     });
 
-    const data = await response.json();
+    const responseText = await response.text();
+    console.log("Raw API Response Text:", responseText);
+
+    let data;
+    try {
+      // Mencoba untuk parse respons sebagai JSON
+      data = JSON.parse(responseText);
+    } catch (error) {
+      console.error("Error parsing JSON:", error);
+      throw new Error("Received non-JSON response from server");
+    }
+
+    // const data = await response.json();
     console.log("API Response Status:", response.status);
     console.log("API Response Data:", JSON.stringify(data, null, 2));
+
+
 
     if (!response.ok) {
       // Handle error responses
@@ -20,17 +36,19 @@ export const loginUser = async (email: string, password: string) => {
       throw new Error(data.message || "Login failed");
     }
 
-    const token =  data.payload?.token || data.token;
+    const authtoken = data.users?.token
 
-    if (!token) {
+    if (!authtoken) {
       console.error("Token not found in the response data.");
       throw new Error("Authentication token not received");
     }
 
-    return { token };
+    await AsyncStorage.setItem("authToken", authtoken);
+
+    return { authtoken };
 
   } catch (error: any) {
-    console.error("Error in loginUser:", error);
+    console.error("Server sedang down atau tidak dapat diakses");
     throw new Error(error.message || "Login failed");
   }
 };

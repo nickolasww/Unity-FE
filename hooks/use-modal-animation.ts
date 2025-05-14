@@ -1,5 +1,6 @@
 "use client"; 
 
+import { de } from "date-fns/locale";
 import { useEffect, useState } from "react";
 import { Animated } from "react-native"; 
 
@@ -24,3 +25,5 @@ export const useModalAnimation = (isVisible: boolean) => {
 
   return { modalAnimation }
 }
+
+export default useModalAnimation

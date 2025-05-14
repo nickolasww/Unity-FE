@@ -37,3 +37,5 @@ export const FindingRecipesModal: React.FC<FindingRecipesModalProps> = ({ visibl
     </Modal>
   )
 }
+
+export default FindingRecipesModal

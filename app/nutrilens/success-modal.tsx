@@ -21,3 +21,5 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({ visible }) => {
     </Modal>
   )
 }
+
+export default SuccessModal

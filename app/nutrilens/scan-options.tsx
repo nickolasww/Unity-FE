@@ -36,3 +36,5 @@ export const ScanOptions: React.FC<ScanOptionsProps> = ({ onScanFood, onScanIngr
     </View>
   )
 }
+
+export default ScanOptions

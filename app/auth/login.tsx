@@ -34,7 +34,7 @@ const Login = () => {
       try {
         const token = await AsyncStorage.getItem("Token")
         if (token) {
-          router.push("/home")
+          router.push("/personalisasi/personalisasipage")
         }
       } catch (error) {
         console.error("Failed to check token", error)
@@ -92,9 +92,9 @@ const Login = () => {
       setIsSubmitting(true)
       const data = await loginUser(email, password)
 
-      if (data && data.token) {
-        await AsyncStorage.setItem("Token", data.token)
-        router.push("/home")
+      if (data && data.authtoken) {
+        await AsyncStorage.setItem("Token", data.authtoken)
+        router.push("/personalisasi/personalisasipage")
       } else {
         throw new Error("Authentication token tidak ditemukan")
       }

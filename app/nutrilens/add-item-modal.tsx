@@ -179,3 +179,5 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
     </Modal>
   )
 }
+
+export default AddItemModal

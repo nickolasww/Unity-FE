@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import {
   View,
   Text,
@@ -24,8 +24,6 @@ import {
   getRecipeRecommendations,
   saveFoodHistory,
   saveRecipeToUserHistory,
-  fetchFoodHistory,
-  fetchRecipeHistory,
 } from "../../services/api-nutrilens"
 import { type Recipe, defaultRecipeData } from "../../utils/foodtypes"
 import { useSpinAnimation } from "../../hooks/use-spin-animation"
@@ -42,11 +40,56 @@ import { ScanOptions } from "../../app/nutrilens/scan-options"
 // Opsi untuk dropdown
 const mealOptions = ["Sarapan", "Makan Siang", "Makan Malam"]
 
+// Sample food history data
+const sampleFoodHistory: FoodItem[] = [
+  { id: "1", name: "Nasi Goreng", calories: 450, weight: 250, unit: "g" },
+  { id: "2", name: "Ayam Bakar", calories: 300, weight: 150, unit: "g" },
+  { id: "3", name: "Sayur Asem", calories: 120, weight: 200, unit: "g" },
+]
+
+// Sample recipe history data
+const sampleRecipeHistory: Recipe[] = [
+  {
+    id: "101",
+    name: "Nasi Goreng Spesial",
+    calories: 550,
+    weight: 300,
+    unit: "g",
+    nutritionDetails: {
+      carbs: 70,
+      protein: 20,
+      fat: 15,
+      fiber: 5,
+    },
+    ingredients: ["Nasi", "Telur", "Bawang", "Kecap", "Cabai"],
+    cookTime: "15 menit",
+    difficulty: "Mudah",
+    steps: ["Tumis bumbu", "Masukkan nasi", "Aduk rata", "Sajikan"],
+  },
+  {
+    id: "102",
+    name: "Ayam Goreng Crispy",
+    calories: 450,
+    weight: 200,
+    unit: "g",
+    nutritionDetails: {
+      carbs: 30,
+      protein: 40,
+      fat: 25,
+      fiber: 2,
+    },
+    ingredients: ["Ayam", "Tepung", "Bawang Putih", "Garam", "Merica"],
+    cookTime: "30 menit",
+    difficulty: "Sedang",
+    steps: ["Marinasi ayam", "Balur tepung", "Goreng hingga keemasan", "Sajikan"],
+  },
+]
+
 export default function NutriLensScreen() {
   const [selectedMeal, setSelectedMeal] = useState("Sarapan")
   const [showMealOptions, setShowMealOptions] = useState(false)
   const [activeTab, setActiveTab] = useState("NutriKu")
-  const [foodHistory, setFoodHistory] = useState<FoodItem[]>([])
+  const [foodHistory, setFoodHistory] = useState<FoodItem[]>(sampleFoodHistory)
   const [searchText, setSearchText] = useState("")
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
   const [imageUri, setImageUri] = useState<string | null>(null)
@@ -63,15 +106,15 @@ export default function NutriLensScreen() {
   const [newItemFat, setNewItemFat] = useState("")
   const [newItemFiber, setNewItemFiber] = useState("")
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [showSaveRecipeSuccess, setShowSaveRecipeSuccess] = useState(false)
   const [showCameraScreen, setShowCameraScreen] = useState(false)
-  const timeoutRef = useRef<number | null>(null)
   const navigation = useNavigation()
   const [recognizedIngredients, setRecognizedIngredients] = useState<FoodItem[]>([])
   const [ingredientsAnalysisComplete, setIngredientsAnalysisComplete] = useState(false)
   const [findingRecipes, setFindingRecipes] = useState(false)
   const [recipeRecommendations, setRecipeRecommendations] = useState<Recipe[]>([])
   const [showRecipeRecommendations, setShowRecipeRecommendations] = useState(false)
-  const [recipeHistory, setRecipeHistory] = useState<Recipe[]>([])
+  const [recipeHistory, setRecipeHistory] = useState<Recipe[]>(sampleRecipeHistory)
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null)
   const [showRecipeDetail, setShowRecipeDetail] = useState(false)
   const [activeRecipeTab, setActiveRecipeTab] = useState("Bahan-bahan")
@@ -91,14 +134,6 @@ export default function NutriLensScreen() {
         // Request camera permission
         const granted = await requestCameraPermission()
         setHasPermission(granted)
-
-        // Fetch food history
-        const foods = await fetchFoodHistory()
-        setFoodHistory(foods)
-
-        // Fetch recipe history
-        const recipes = await fetchRecipeHistory()
-        setRecipeHistory(recipes)
 
         // Set suggested foods (this could be from backend or local)
         setSuggestedFoods([
@@ -131,7 +166,9 @@ export default function NutriLensScreen() {
 
         // Call backend API to analyze food
         const foods = await analyzeFoodImage(uri)
-        setRecognizedFoods(foods)
+
+        // Check if foods is undefined or null and provide a default empty array
+        setRecognizedFoods(foods || [])
         setLoading(false)
         setAnalysisComplete(true)
       } else {
@@ -141,6 +178,7 @@ export default function NutriLensScreen() {
       console.error("Error taking/analyzing food picture:", error)
       setLoading(false)
       setShowCameraScreen(false)
+      setRecognizedFoods([]) // Ensure recognizedFoods is always an array
       Alert.alert("Error", "Gagal menganalisis gambar makanan. Silakan coba lagi.")
     }
   }
@@ -163,7 +201,9 @@ export default function NutriLensScreen() {
 
         // Call backend API to analyze ingredients
         const ingredients = await analyzeIngredientsImage(uri)
-        setRecognizedIngredients(ingredients)
+
+        // Check if ingredients is undefined or null and provide a default empty array
+        setRecognizedIngredients(ingredients || [])
         setLoading(false)
         setIngredientsAnalysisComplete(true)
       } else {
@@ -173,6 +213,7 @@ export default function NutriLensScreen() {
       console.error("Error taking/analyzing ingredients picture:", error)
       setLoading(false)
       setShowCameraScreen(false)
+      setRecognizedIngredients([]) // Ensure recognizedIngredients is always an array
       Alert.alert("Error", "Gagal menganalisis gambar bahan. Silakan coba lagi.")
     }
   }
@@ -186,24 +227,16 @@ export default function NutriLensScreen() {
         return
       }
 
-      navigation.navigate("nutrilens/resepkuDetail", {
-        id: recipe.id,
-        name: recipe.name,
-        calories: recipe.calories || 0,
-        weight: recipe.weight || 0,
-        unit: recipe.unit || "g",
-        nutritionDetails: recipe.nutritionDetails || defaultRecipeData.nutritionDetails,
-        ingredients: recipe.ingredients || defaultRecipeData.ingredients,
-        cookTime: recipe.cookTime || defaultRecipeData.cookTime,
-        difficulty: recipe.difficulty || defaultRecipeData.difficulty,
-      })
+      // Instead of using navigation, set the selected recipe and show the detail screen
+      setSelectedRecipe(recipe)
+      setShowRecipeDetail(true)
     } catch (error) {
       console.error("Navigation error:", error)
       Alert.alert("Error", "Gagal membuka detail resep.")
     }
   }
 
-  // Function to save recipe to history
+  // Function to save recipe to history - FIXED to handle a single Recipe object
   const saveRecipeToHistory = async (recipe: Recipe) => {
     try {
       // Add default values for properties that might be missing
@@ -218,17 +251,27 @@ export default function NutriLensScreen() {
         ingredients: recipe.ingredients || defaultRecipeData.ingredients,
         cookTime: recipe.cookTime || defaultRecipeData.cookTime,
         difficulty: recipe.difficulty || defaultRecipeData.difficulty,
+        steps: recipe.steps || [],
       }
+
+      console.log("Saving recipe to history:", completeRecipe.name)
 
       // Check if recipe already exists in history
       const exists = recipeHistory.some((item) => item.id === completeRecipe.id)
       if (!exists) {
-        // Save to backend
-        const success = await saveRecipeToUserHistory(completeRecipe)
-        if (success) {
-          // Update local state
-          setRecipeHistory([completeRecipe, ...recipeHistory])
-        }
+        
+        setRecipeHistory([completeRecipe, ...recipeHistory])
+        setShowSaveRecipeSuccess(true)
+        setTimeout(() => {
+          setShowSaveRecipeSuccess(false)
+        }, 2000)
+
+        // Save to backend in background
+        saveRecipeToUserHistory([completeRecipe as unknown as FoodItem]).catch((error) => {
+          console.error("Error saving to backend:", error)
+        })
+      } else {
+        Alert.alert("Info", "Resep ini sudah ada di riwayat.")
       }
     } catch (error) {
       console.error("Error saving recipe to history:", error)
@@ -240,18 +283,29 @@ export default function NutriLensScreen() {
   const handleFindRecipes = async () => {
     try {
       setFindingRecipes(true)
+      console.log("Finding recipes for ingredients:", recognizedIngredients)
 
       // Call backend API to get recipe recommendations
       const recipes = await getRecipeRecommendations(recognizedIngredients)
+      console.log("Received recipe recommendations:", recipes ? recipes.length : 0)
+
+      setFindingRecipes(false)
+
+      if (!recipes || recipes.length === 0) {
+        console.warn("No recipes found or empty recipes array returned")
+        Alert.alert("Info", "Tidak ditemukan resep yang cocok dengan bahan-bahan ini. Silakan coba bahan lain.")
+        return
+      }
+
+      // Log the first recipe to help with debugging
+      if (recipes.length > 0) {
+        console.log("First recipe:", JSON.stringify(recipes[0], null, 2))
+      }
 
       setRecipeRecommendations(recipes)
-      setFindingRecipes(false)
       setShowRecipeRecommendations(true)
 
-      // Save the first recipe to history
-      if (recipes.length > 0) {
-        await saveRecipeToHistory(recipes[0])
-      }
+      // Removed automatic saving of first recipe
     } catch (error) {
       console.error("Error finding recipes:", error)
       setFindingRecipes(false)
@@ -277,7 +331,9 @@ export default function NutriLensScreen() {
 
         // Call backend API to analyze food
         const foods = await analyzeFoodImage(uri)
-        setRecognizedFoods(foods)
+
+        // Check if foods is undefined or null and provide a default empty array
+        setRecognizedFoods(foods || [])
         setLoading(false)
         setAnalysisComplete(true)
       } else {
@@ -287,6 +343,7 @@ export default function NutriLensScreen() {
       console.error("Error retaking picture:", error)
       setLoading(false)
       setShowCameraScreen(false)
+      setRecognizedFoods([]) // Ensure recognizedFoods is always an array
       Alert.alert("Error", "Gagal menganalisis gambar. Silakan coba lagi.")
     }
   }
@@ -294,6 +351,15 @@ export default function NutriLensScreen() {
   // Function to save food to history
   const handleSaveFood = async () => {
     try {
+      // Check if there are foods to save
+      if (!recognizedFoods || recognizedFoods.length === 0) {
+        Alert.alert("Error", "Tidak ada makanan untuk disimpan.")
+        return
+      }
+
+      console.log("Attempting to save foods:", recognizedFoods)
+      console.log("Selected meal:", selectedMeal)
+
       // Save to backend
       const success = await saveFoodHistory(recognizedFoods, selectedMeal)
 
@@ -406,12 +472,6 @@ export default function NutriLensScreen() {
     setIngredientsAnalysisComplete(false)
   }
 
-  // Function to show recipe detail
-  const handleRecipeDetail = (recipe: Recipe) => {
-    setSelectedRecipe(recipe)
-    setShowRecipeDetail(true)
-  }
-
   // Function to go back from recipe detail
   const handleBackFromRecipeDetail = () => {
     setShowRecipeDetail(false)
@@ -423,7 +483,7 @@ export default function NutriLensScreen() {
   const handleSaveRecipe = async () => {
     if (selectedRecipe) {
       try {
-        // Save to backend
+        // Save to history
         await saveRecipeToHistory(selectedRecipe)
 
         // Reset UI
@@ -457,6 +517,11 @@ export default function NutriLensScreen() {
       console.error("Error adding food:", error)
       Alert.alert("Error", "Gagal menambahkan makanan ke riwayat.")
     }
+  }
+
+  // Function to handle bookmark click in recipe history
+  const handleBookmarkClick = (recipe: Recipe) => {
+    saveRecipeToHistory(recipe)
   }
 
   // Function to handle meal selection
@@ -518,6 +583,7 @@ export default function NutriLensScreen() {
           recipes={recipeRecommendations}
           onBack={handleBackToNutriLens}
           onRecipeSelect={navigateToRecipeDetail}
+          onSaveRecipe={saveRecipeToHistory}
         />
       )
     }
@@ -555,9 +621,10 @@ export default function NutriLensScreen() {
 
   // Tampilan utama
   return (
-    <SafeAreaView className="flex-1 bg-gray-100 p-3">
-      <View className="flex-1 bg-white rounded-lg">
-        <ScrollView className="flex-1 p-4">
+    <SafeAreaView className="flex-1 bg-gray-100">
+      <View className="flex-1 bg-gray-100 px-3">
+        <ScrollView className="flex-1 ">
+          <View className="bg-white p-3 rounded-2xl mb-3 ">
           {/* Meal Selector Dropdown */}
           <MealSelector
             selectedMeal={selectedMeal}
@@ -578,6 +645,7 @@ export default function NutriLensScreen() {
               handleTakeIngredientsPicture()
             }}
           />
+          </View> 
 
           {/* Search Bar */}
           <View className="bg-white rounded-full flex-row items-center px-4 py-1 mb-7 shadow-sm border border-gray-200">
@@ -591,6 +659,7 @@ export default function NutriLensScreen() {
           </View>
 
           {/* Tabs */}
+          <View className="bg-white px-4 pt-4 rounded-t-2xl ">
           <View className="flex-row mb-4">
             <TouchableOpacity
               className={`flex-1 py-3 ${
@@ -669,8 +738,8 @@ export default function NutriLensScreen() {
                             </View>
                           </View>
                         </View>
-                        <TouchableOpacity className="p-2">
-                          <Ionicons name="add-circle-outline" size={24} color="#10B981" />
+                        <TouchableOpacity className="p-2" onPress={() => handleBookmarkClick(recipe)}>
+                          <Ionicons name="bookmark-outline" size={24} color="#10B981" />
                         </TouchableOpacity>
                       </TouchableOpacity>
                     ))}
@@ -685,12 +754,20 @@ export default function NutriLensScreen() {
               </View>
             </>
           )}
-
+          </View>
           {/* Success Message */}
           {showSuccessModal && (
             <View className="bg-orange-50 border border-orange-200 rounded-lg p-4 flex-row items-center mb-4">
               <Ionicons name="checkmark-circle" size={24} color="#FF5733" className="mr-2" />
               <Text className="text-orange-500">Nama Item berhasil ditambahkan ke NuTracker</Text>
+            </View>
+          )}
+
+          {/* Recipe Save Success Message */}
+          {showSaveRecipeSuccess && (
+            <View className="bg-green-50 border border-green-200 rounded-lg p-4 flex-row items-center mb-4">
+              <Ionicons name="bookmark" size={24} color="#10B981" className="mr-2" />
+              <Text className="text-green-500">Resep berhasil disimpan ke riwayat</Text>
             </View>
           )}
         </ScrollView>
