@@ -710,7 +710,7 @@ export default function NutriLensScreen() {
           ) : (
             <>
               {/* Recipe History */}
-              <View className="mb-6">
+              <View className="mb-6 pb-20">
                 <Text className="text-lg font-bold mb-2">Riwayat</Text>
                 <Text className="text-sm text-gray-600 mb-4">Berikut resep yang pernah kamu rekam.</Text>
 
