@@ -2,7 +2,7 @@
 import type { FoodItem, Recipe } from "../utils/foodtypes"
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = "https://de43-118-99-68-242.ngrok-free.app" 
+const API_BASE_URL = "https://nutripath.bccdev.id/api/v1/" 
 
 // Function to analyze food from image
 export const analyzeFoodImage = async (imageUri: string): Promise<FoodItem[]> => {
@@ -19,7 +19,7 @@ export const analyzeFoodImage = async (imageUri: string): Promise<FoodItem[]> =>
     formData.append("scan_type", "nutriku")
 
     // Send the image to the backend for analysis
-    const response = await fetch(`${API_BASE_URL}/api/v1/gemini/analyze`, {
+    const response = await fetch(`${API_BASE_URL}gemini/analyze`, {
       method: "POST",
       body: formData,
       headers: {
@@ -76,7 +76,7 @@ export const saveFoodHistory = async (foods: FoodItem[], meal_time: string): Pro
     // Extract only the food IDs from the foods array
     const foodIds = foods.map((food) => Number(food.id))
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/foods/save-histories`, {
+    const response = await fetch(`${API_BASE_URL}foods/save-histories`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -122,7 +122,7 @@ export const analyzeIngredientsImage = async (imageUri: string): Promise<FoodIte
      formData.append("scan_type", "resepku")
 
     // Send the image to the backend for analysis
-    const response = await fetch(`${API_BASE_URL}/api/v1/gemini/analyze`, {
+    const response = await fetch(`${API_BASE_URL}gemini/analyze`, {
       method: "POST",
       body: formData,
       headers: {
@@ -176,7 +176,7 @@ export const getRecipeRecommendations = async (foods: FoodItem[]): Promise<Recip
 
     const foodIds = foods.map((food) => Number(food.id))
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/gemini/create-food`, {
+    const response = await fetch(`${API_BASE_URL}gemini/create-food`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -270,7 +270,7 @@ export const saveRecipeToUserHistory = async (foods: FoodItem[]): Promise<boolea
     // Extract only the food IDs from the foods array
     const foodIds = foods.map((food) => Number(food.id))
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/foods/add-bookmark`, {
+    const response = await fetch(`${API_BASE_URL}foods/add-bookmark`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -294,38 +294,4 @@ export const saveRecipeToUserHistory = async (foods: FoodItem[]): Promise<boolea
     return false
   }
 }
-
-// Function to fetch user's food history
-// export const fetchFoodHistory = async (): Promise<FoodItem[]> => {
-//   try {
-//     const response = await fetch(`${API_BASE_URL}`)
-
-//     if (!response.ok) {
-//       throw new Error(`Server responded with ${response.status}`)
-//     }
-
-//     const data = await response.json()
-//     return data.foods
-//   } catch (error) {
-//     console.error("Error fetching food history:", error)
-//     return []
-//   }
-// }
-
-// // Function to fetch user's recipe history
-// export const fetchRecipeHistory = async (): Promise<Recipe[]> => {
-//   try {
-//     const response = await fetch(`${API_BASE_URL}/recipe-history`)
-
-//     if (!response.ok) {
-//       throw new Error(`Server responded with ${response.status}`)
-//     }
-
-//     const data = await response.json()
-//     return data.recipes
-//   } catch (error) {
-//     console.error("Error fetching recipe history:", error)
-//     return []
-//   }
-// }
 

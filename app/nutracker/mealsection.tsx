@@ -3,13 +3,18 @@ import { View, Text, TouchableOpacity } from "react-native"
 import { Plus } from "lucide-react-native"
 
 interface FoodItem {
+  id?: number
   name: string
   calories: number
-  portion?: number
-  carbs?: number
+  carbohydrates?: number
   protein?: number
-  fat?: number
+  fats?: number
   fiber?: number
+  portion?: number
+  created_at?: string
+  steps?: string[]
+  recipes?: string[]
+  difficulty?: string
 }
 
 interface Meal {
@@ -25,8 +30,8 @@ interface MealSectionProps {
 }
 
 export const MealSection: React.FC<MealSectionProps> = ({ meal, onAddFood }) => {
-  // Hitung total kalori dari semua item
-  const totalCalories = meal.items.reduce((sum, item) => sum + item.calories, 0)
+  // Use the calories from the API data directly
+  const totalCalories = meal.calories || 0
 
   return (
     <View className="bg-white rounded-xl mb-4 overflow-hidden">
@@ -50,12 +55,21 @@ export const MealSection: React.FC<MealSectionProps> = ({ meal, onAddFood }) => 
       </View>
 
       {/* Food Items */}
-      {meal.items.map((item, index) => (
-        <View key={`${item.name}-${index}`} className="flex-row justify-between py-3 px-4 border-t border-gray-100">
-          <Text>{item.name}</Text>
-          <Text>{item.calories} kkal</Text>
+      {meal.items.length > 0 ? (
+        meal.items.map((item, index) => (
+          <View
+            key={`${item.id || ""}-${index}`}
+            className="flex-row justify-between py-3 px-4 border-t border-gray-100"
+          >
+            <Text>{item.name}</Text>
+            <Text>{item.calories} kkal</Text>
+          </View>
+        ))
+      ) : (
+        <View className="py-3 px-4 border-t border-gray-100">
+          <Text className="text-gray-400 text-center">Belum ada makanan</Text>
         </View>
-      ))}
+      )}
     </View>
   )
 }

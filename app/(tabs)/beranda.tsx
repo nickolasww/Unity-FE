@@ -1,427 +1,188 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  Image,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  SafeAreaView,
-  StatusBar,
-  ImageBackground,
-} from "react-native"
-import { Ionicons } from "@expo/vector-icons"
-import { Link, router } from "expo-router";
+"use client"
+import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView } from "react-native"
+import Icon from "react-native-vector-icons/Feather"
+import { useRouter } from "expo-router"
 
-// Main App Component
-export default function beranda() {
+export default function BerandaScreen() {
+  const router = useRouter()
+
+  const navigateToPoin = () => {
+    router.push("/beranda/poin")
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <SafeAreaView className="flex-1 bg-gray-100 ">
+      {/* Header */}
+      <View className=" flex-column bg-white ">
+          <View className="flex-row justify-between items-center p-4">
+        <View className="flex-row items-center gap-3">
+          <Image source={require("../../assets/profile.png")} className="w-12 h-12 rounded-full" />
+          <View>
+            <Text className="text-lg font-semibold">Hai, Rizka!</Text>
+            <TouchableOpacity className="flex-row items-center mt-1" onPress={navigateToPoin}>
+              <Image source={require("../../assets/Coin.png")} className="w-4 h-4 mr-1" />
+              <Text className="text-amber-500 text-sm">120 Poin</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View className="flex-row items-center">
+          <Icon name="bell" size={24} color="#666" className="mr-4" />
+          <Icon name="gift" size={24} color="#666" />
+        </View>
+        </View> 
+         {/* Nutrition Summary */}
+        <View className="bg-orange-50 rounded-lg p-4 mb-4">
+          <Text className="font-medium mb-2">Ringkasan nutrisimu hari ini</Text>
+          <View className="space-y-1">
+            <Text className="text-sm">
+              Konsumsi kalori hari ini: <Text className="font-semibold text-red-500">2.102 kkal</Text>
+            </Text>
+            <Text className="text-sm">
+              Batas kalori harian: <Text className="font-semibold">2.000 kkal</Text>
+            </Text>
+          </View>
+        </View>
+      </View>
 
       {/* Main Content */}
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header Section */}
-        <Header />
+      <ScrollView className="flex-1 p-3" showsVerticalScrollIndicator={false}>
+        {/* Feature Buttons */}
+        <View className="bg-white rounded-lg p-4 mb-4 shadow-sm">
+          <View className="flex-row justify-between">
+            <View className="items-center w-[30%]">
+              <View className="w-12 h-12 bg-purple-100 rounded-lg justify-center items-center mb-1">
+                <Icon name="box" size={24} color="#9333ea" />
+              </View>
+              <Text className="text-xs font-medium">BMI</Text>
+            </View>
+            <View className="items-center w-[30%]">
+              <View className="w-12 h-12 bg-amber-100 rounded-lg justify-center items-center mb-1">
+                <Icon name="layers" size={24} color="#f59e0b" />
+              </View>
+              <Text className="text-xs font-medium">Misi</Text>
+            </View>
+            <View className="items-center w-[30%]">
+              <View className="w-12 h-12 bg-emerald-100 rounded-lg justify-center items-center mb-1">
+                <Icon name="clipboard" size={24} color="#10b981" />
+              </View>
+              <Text className="text-xs font-medium">Konsultasi</Text>
+            </View>
+          </View>
+        </View>
 
-        {/* Featured Cards */}
-        <FeaturedCards />
+        {/* Promo Banner */}
+        <View className="relative mb-4">
+          <Image
+            source={{ uri: "https://via.placeholder.com/400x180" }}
+            className="w-full h-[180px] rounded-lg"
+            resizeMode="cover"
+          />
+          <View className="absolute bottom-2 flex-row self-center gap-1">
+            <View className="w-2 h-2 rounded-full bg-gray-800" />
+            <View className="w-2 h-2 rounded-full bg-gray-400" />
+            <View className="w-2 h-2 rounded-full bg-gray-400" />
+          </View>
+        </View>
 
-        {/* Recommendation Section */}
-        <SectionHeader title="Recommendation For You" />
-        <RecommendationCards />
+        {/* Rekomendasi Resep */}
+        <View className="flex-row justify-between items-center mb-3">
+          <Text className="text-lg font-medium">Rekomendasi resep sehat</Text>
+          <TouchableOpacity>
+            <Text className="text-sm text-emerald-600">Lihat Selengkapnya</Text>
+          </TouchableOpacity>
+        </View>
 
-        {/* Best Deals Section */}
-        <SectionHeader title="Best Deal For You" />
-        <BestDealCards />
+        <RecipeCard
+          image="https://via.placeholder.com/80"
+          title="Roti Lapis Alpukat"
+          calories="300 kkal"
+          weight="380g"
+        />
+        <RecipeCard
+          image="https://via.placeholder.com/80"
+          title="Smoothie Pisang Oat"
+          calories="180 kkal"
+          weight="180g"
+        />
+        <RecipeCard
+          image="https://via.placeholder.com/80"
+          title="Telur Orak Arik Sayur"
+          calories="150 kkal"
+          weight="150g"
+        />
 
-        {/* Bottom padding for scrolling past the navigation bar */}
-        <View style={{ height: 80 }} />
+        {/* Artikel */}
+        <View className="flex-row justify-between items-center mb-3 mt-4">
+          <Text className="text-lg font-medium">Artikel</Text>
+          <TouchableOpacity>
+            <Text className="text-sm text-emerald-600">Lihat Selengkapnya</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ArticleCard
+          image="https://via.placeholder.com/80"
+          title="6 Fakta Temuan Pakar Nutrisi Soal Konsumsi Protein Berlebih"
+          source="Tempo.com"
+          date="10 Mei 2025"
+        />
+        <ArticleCard
+          image="https://via.placeholder.com/80"
+          title="Nutrisi Sehat sebagai Pendekatan Humanis dalam Pembinaan Anak"
+          source="Kompasiana"
+          date="10 Mei 2025"
+        />
+
+        {/* Bottom padding to ensure content isn't hidden by tab bar */}
+        <View className="h-20" />
       </ScrollView>
     </SafeAreaView>
   )
 }
 
-// Header Component with Search Bar
-const Header = () => {
+// Component untuk kartu resep
+function RecipeCard({ image, title, calories, weight }) {
   return (
-    <View style={styles.headerContainer}>
-      <Image
-        source={require("../../assets/Header.png")}
-        style={styles.headerImage}
-      />
+    <View className="bg-white rounded-lg p-3 mb-3 flex-row justify-between items-center shadow-sm">
+      <View className="flex-row items-center gap-3">
+        <Image source={{ uri: image }} className="w-16 h-16 rounded-lg" />
+        <View className="gap-1">
+          <Text className="font-medium">{title}</Text>
+          <View className="flex-row gap-2 mt-1">
+            <Text className="text-xs px-2 py-0.5 bg-red-100 text-red-600 rounded">{calories}</Text>
+            <Text className="text-xs px-2 py-0.5 bg-green-100 text-green-600 rounded">{weight}</Text>
+          </View>
+        </View>
+      </View>
+      <View className="w-6 h-6 border border-gray-300 rounded" />
+    </View>
+  )
+}
 
-      {/* Menu Button */}
-      <TouchableOpacity style={styles.menuButton}>
-        <Ionicons name="menu" size={24} color="white" />
-      </TouchableOpacity>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color="#762727" style={styles.searchIcon} />
-          <TextInput style={styles.searchInput} placeholder="Search for a place to go..." placeholderTextColor="#999" />
+// Component untuk kartu artikel
+function ArticleCard({ image, title, source, date }) {
+  return (
+    <View className="bg-white rounded-lg p-3 mb-3 flex-row gap-3 shadow-sm">
+      <Image source={{ uri: image }} className="w-16 h-16 rounded-lg" />
+      <View className="flex-1 justify-between">
+        <Text className="font-medium text-sm">{title}</Text>
+        <View className="flex-row justify-between mt-1">
+          <Text className="text-xs text-gray-500">{source}</Text>
+          <View className="flex-row items-center gap-1">
+            <Icon name="calendar" size={12} color="#999" />
+            <Text className="text-xs text-gray-500">{date}</Text>
+          </View>
         </View>
       </View>
     </View>
   )
 }
 
-// Featured Cards Component
-const FeaturedCards = () => {
-  const featuredData = [
-    {
-      id: "1",
-      title: "CELEBRATE INDONESIAN DIVERSITY",
-      image: require("../../assets/Celebrate.png"),
-      buttonText: "START EXPLORE",
-    },
-    {
-      id: "2",
-      title: "EMBRACE CULTURAL HERITAGE",
-      // image: require("../../assets/Embrace.png"),
-      buttonText: "DISCOVER NOW",
-    },
-    {
-      id: "3",
-      title: "NATURAL WONDERS",
-      image: "",
-      buttonText: "EXPLORE",
-    },
-  ]
-
+// Component untuk tombol navigasi
+function NavButton({ icon, label, isActive, onPress }) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredContainer}>
-      {featuredData.map((item) => (
-        <FeaturedCard key={item.id} title={item.title} image={item.image} buttonText={item.buttonText} />
-      ))}
-    </ScrollView>
-  )
-}
-
-// Individual Featured Card
-const FeaturedCard = ({ title, image, buttonText }) => {
-  return (
-    <ImageBackground source={image} style={styles.featuredCard} imageStyle={styles.featuredCardImage}>
-      <View style={styles.featuredCardOverlay}>
-        <Text style={styles.featuredCardTitle}>{title}</Text>
-        <TouchableOpacity style={styles.featuredCardButton}>
-          <Text style={styles.featuredCardButtonText}>{buttonText}</Text>
-        </TouchableOpacity>
-      </View>
-    </ImageBackground>
-  )
-}
-
-// Section Header Component
-const SectionHeader = ({ title }) => {
-  return (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <TouchableOpacity onPress={() => router.push("/recommendation/alam")}>
-        <Text style={styles.viewAllText}>View All</Text>
-      </TouchableOpacity>
-    </View>
-  )
-}
-
-// Recommendation Cards Component
-const RecommendationCards = () => {
-  const recommendationData = [
-    {
-      id: "1",
-      name: "Taman Sari",
-      category: "History",
-      rating: 4.5,
-      image: "https://images.unsplash.com/photo-1584810359583-96fc3448beaa?q=80&w=1000&auto=format&fit=crop",
-    },
-    {
-      id: "2",
-      name: "Prambanan Temple",
-      category: "History",
-      rating: 5,
-      image: "https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?q=80&w=1000&auto=format&fit=crop",
-    },
-    {
-      id: "3",
-      name: "Borobudur",
-      category: "History",
-      rating: 4.8,
-      image: "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?q=80&w=1000&auto=format&fit=crop",
-    },
-  ]
-
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardsContainer}>
-      {recommendationData.map((item) => (
-        <DestinationCard
-          key={item.id}
-          name={item.name}
-          category={item.category}
-          rating={item.rating}
-          image={item.image}
-        />
-      ))}
-    </ScrollView>
-  )
-}
-
-// Best Deal Cards Component
-const BestDealCards = () => {
-  const bestDealData = [
-    {
-      id: "1",
-      name: "Bali Beach",
-      category: "Beach",
-      rating: 4.5,
-      image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=1000&auto=format&fit=crop",
-    },
-    {
-      id: "2",
-      name: "Raja Ampat",
-      category: "History",
-      rating: 5,
-      image: "https://images.unsplash.com/photo-1516690561799-46d8f74f9abf?q=80&w=1000&auto=format&fit=crop",
-    },
-    {
-      id: "3",
-      name: "Komodo Island",
-      category: "Nature",
-      rating: 4.7,
-      image: "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?q=80&w=1000&auto=format&fit=crop",
-    },
-  ]
-
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardsContainer}>
-      {bestDealData.map((item) => (
-        <DestinationCard
-          key={item.id}
-          name={item.name}
-          category={item.category}
-          rating={item.rating}
-          image={item.image}
-        />
-      ))}
-    </ScrollView>
-  )
-}
-
-// Destination Card Component
-const DestinationCard = ({ name, category, rating, image }) => {
-  // Generate star rating
-  const renderStars = () => {
-    const stars = []
-    const fullStars = Math.floor(rating)
-    const hasHalfStar = rating % 1 !== 0
-
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(<Ionicons key={`star-${i}`} name="star" size={14} color="#FFD700" />)
-    }
-
-    if (hasHalfStar) {
-      stars.push(<Ionicons key="half-star" name="star-half" size={14} color="#FFD700" />)
-    }
-
-    const remainingStars = 5 - stars.length
-    for (let i = 0; i < remainingStars; i++) {
-      stars.push(<Ionicons key={`empty-star-${i}`} name="star-outline" size={14} color="#FFD700" />)
-    }
-
-    return stars
-  }
-
-  return (
-    <TouchableOpacity style={styles.destinationCard}>
-      <Image source={{ uri: image }} style={styles.destinationImage} />
-      <View style={styles.destinationInfo}>
-        <Text style={styles.destinationName}>{name}</Text>
-        <Text style={styles.destinationCategory}>{category}</Text>
-        <View style={styles.ratingContainer}>{renderStars()}</View>
-      </View>
+    <TouchableOpacity className="items-center justify-center w-16" onPress={onPress}>
+      <Icon name={icon} size={24} color={isActive ? "#f97316" : "#777"} />
+      <Text className={`text-xs mt-1 ${isActive ? "text-orange-500" : "text-gray-500"}`}>{label}</Text>
     </TouchableOpacity>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f8f8",
-  },
-  scrollView: {
-    flex: 1,
-  },
-
-  // Header Styles
-  headerContainer: {
-    position: "relative",
-    height: 220,
-  },
-  headerImage: {
-    width: "100%",
-    height: 220,
-  },
-  menuButton: {
-    position: "absolute",
-    top: 40,
-    right: 20,
-    zIndex: 10,
-  },
-  searchContainer: {
-    position: "absolute",
-    bottom: -25,
-    left: 20,
-    right: 20,
-    alignItems: "center",
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-    height: 50,
-    backgroundColor: "white",
-    borderRadius: 25,
-    paddingHorizontal: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    height: "100%",
-    fontSize: 14,
-  },
-
-  // Featured Cards Styles
-  featuredContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-  },
-  featuredCard: {
-    width: 280,
-    height: 180,
-    marginRight: 15,
-    borderRadius: 10,
-    overflow: "hidden",
-    justifyContent: "center",
-  },
-  featuredCardImage: {
-    borderRadius: 10,
-  },
-  featuredCardOverlay: {
-    backgroundColor: "rgba(0,0,0,0.4)",
-    padding: 20,
-    height: "100%",
-    justifyContent: "center",
-  },
-  featuredCardTitle: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 15,
-  },
-  featuredCardButton: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: "white",
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    alignSelf: "flex-start",
-  },
-  featuredCardButtonText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "500",
-  },
-
-  // Section Header Styles
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#762727",
-  },
-  viewAllText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#762727",
-  },
-
-  // Destination Cards Styles
-  cardsContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  destinationCard: {
-    width: 250,
-    height: 180,
-    borderRadius: 10,
-    overflow: "hidden",
-    backgroundColor: "white",
-    marginRight: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  destinationImage: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-  },
-  destinationInfo: {
-    flexDirection: "column",
-    justifyContent: "flex-end",
-    padding: 10,
-    marginTop: 120,
-  },
-  destinationName: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#fff",
-  },
-  destinationCategory: {
-    fontSize: 12,
-    color: "#fff",
-    marginTop: 2,
-  },
-  ratingContainer: {
-    flexDirection: "row",
-    marginTop: 5,
-  },
-
-  // Bottom Navigation Styles
-  bottomNav: {
-    flexDirection: "row",
-    backgroundColor: "white",
-    height: 60,
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  navItem: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-})

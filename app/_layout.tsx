@@ -24,6 +24,9 @@ const RootLayout = () => {
       <Stack.Screen name="insight/komunitasdetaillist"  options={{title: "Komunitas"}} />
       <Stack.Screen name="insight/komunitaslist"  options={{title: "Komunitas"}} />
       <Stack.Screen name="insight/artikeldetaillist"  options={{title: "Artikel"}} />
+      <Stack.Screen name="insight/artikellist"  options={{title: "Artikel"}} />
+      <Stack.Screen name="insight/beranda"  options={{title: "Beranda" ,headerShown: false}} />
+      <Stack.Screen name="beranda/poin"  options={{title: "Voucher"}} />
     </Stack>
   )
 }

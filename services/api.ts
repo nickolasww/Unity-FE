@@ -1,10 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = "https://de43-118-99-68-242.ngrok-free.app";
+const API_BASE_URL = "https://nutripath.bccdev.id/api/v1/";
 
 export const loginUser = async (email: string, password: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/users/login`, {
+    const response = await fetch(`${API_BASE_URL}users/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -15,6 +15,8 @@ export const loginUser = async (email: string, password: string) => {
     const responseText = await response.text();
     console.log("Raw API Response Text:", responseText);
 
+    const responseHeaders = response.headers;
+    console.log("API Response Headers:", JSON.stringify(responseHeaders, null, 2));
     let data;
     try {
       // Mencoba untuk parse respons sebagai JSON
@@ -61,7 +63,7 @@ export const registerUser = async (name: string, email: string, password: string
   }
 
   try { 
-    const response = await fetch(`${API_BASE_URL}/api/v1/users/register`, {
+    const response = await fetch(`${API_BASE_URL}users/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
