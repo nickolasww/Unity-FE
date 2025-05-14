@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import {
   SafeAreaView,
   StyleSheet,
@@ -9,6 +9,8 @@ import {
   StatusBar,
   Dimensions,
   FlatList,
+  Image,
+  Animated,
 } from "react-native"
 import { Link, router } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
@@ -16,29 +18,47 @@ import { Ionicons } from "@expo/vector-icons"
 const { width, height } = Dimensions.get("window")
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true)
   const [currentPage, setCurrentPage] = useState(0)
   const flatListRef = useRef(null)
+  const fadeAnim = useRef(new Animated.Value(0)).current
+  
+  // Logo fade-in animation
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 1500,
+      useNativeDriver: true,
+    }).start()
+    
+    // Hide splash screen after 2.5 seconds
+    const timer = setTimeout(() => {
+      setShowSplash(false)
+    }, 2500)
+    
+    return () => clearTimeout(timer)
+  }, [])
   
   const slides = [
     {
       id: "1",
-      title: "Welcome to Nusatrip",
+      title: "Temukan Rahasia Nutrisi dalam Sekali Scan",
       image: require("../assets/BeachLanding.png"), 
-      subtitle: "Your go-to platform for sustainable fashion! Discover an easy way to switch to an eco-friendly lifestyle while staying stylish.",
+      subtitle: "Ketahui nutrisi makanan dengan NutriKu dan dapatkan rekomendasi resep sesuai bahan yang kamu miliki dengan ResepKu",
       showBackButton: false,
     },
     {
       id: "2",
-      title: "Indonesia Culture",
+      title: "Jalan Mudah Menuju Gizi Seimbang",
       image: require("../assets/GunungLanding.png"), 
-      subtitle: "Culture Sync lets travelers find and book local cultural events nearby, offering real-time updates and easy access to authentic experiences.",
+      subtitle: "Nutracker yang memahami kebutuhan tubuhmu. Catat apa yang kamu makan, pantau asupan nutrisimu",
       showBackButton: true,
     },
     {
       id: "3",
       image: require("../assets/MomLanding.png"),
-      title: "Smart Planner",
-      subtitle: "Smart Trip-AI Planner creates a personalized itinerary using your preferences and real-time data, making travel planning effortless.", 
+      title: "Konsultasi Personal untuk Hasil Maksimal",
+      subtitle: "Dapatkan nasihat dari ahli untuk mengoptimalkan pola makanmu dan mencapai tujuan kesehatanmu.", 
       showBackButton: true,
     }
   ]
@@ -67,12 +87,28 @@ export default function App() {
     router.push("/auth/login")
   }
 
+  // Splash Screen Component
+  if (showSplash) {
+    return (
+      <View style={styles.splashContainer}>
+        <StatusBar barStyle="dark-content" />
+        <Animated.View style={{ opacity: fadeAnim }}>
+          <Image 
+            source={require('../assets/nutripath-logo.png')} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </Animated.View>
+      </View>
+    )
+  }
+
   const renderItem = ({ item, index }) => {
     return (
       <View style={styles.slide}>
         <ImageBackground
           source={item.image}
-          className="flex-1 bg-cover"
+          style={styles.backgroundImage}
         >
           <SafeAreaView style={styles.safeArea}>
             <View style={styles.header}>
@@ -84,16 +120,12 @@ export default function App() {
                 <View style={styles.headerLeft} />
               )}
               <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-                <Text style={styles.skipText}>Skip</Text>
+                <Text style={styles.skipText}>Lewati</Text>
+                <Ionicons name="arrow-forward" size={16} color="#FF5733" style={{ marginLeft: 4 }} />
               </TouchableOpacity>
             </View>
 
             <View style={styles.contentContainer}>
-              <View style={styles.textContainer}>
-                <Text className="text-white font-bold text-4xl text-center mb-10">{item.title}</Text>
-                <Text className="text-center text-white text-sm">{item.subtitle}</Text>
-              </View>
-
               <View style={styles.paginationContainer}>
                 {slides.map((_, dotIndex) => (
                   <View
@@ -106,9 +138,14 @@ export default function App() {
                 ))}
               </View>
 
+              <View style={styles.textContainer}>
+                <Text style={styles.title}>{item.title}</Text>
+                <Text style={styles.subtitle}>{item.subtitle}</Text>
+              </View>
+
               <TouchableOpacity style={styles.continueButton} onPress={handleNext}>
-                <Text className="text-black font-bold text-2xl text-center">
-                  {index === slides.length - 1 ? "Get Started" : "Continue"}
+                <Text style={styles.continueButtonText}>
+                  {index === slides.length - 1 ? "Mulai" : "Lanjut"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -151,6 +188,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  // Splash screen styles
+  splashContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFF5F2', // Light background color
+    // Gradient effect can be achieved with a LinearGradient component from expo-linear-gradient
+    // or with an ImageBackground with a gradient image
+  },
+  logo: {
+    width: 200,
+    height: 100,
+  },
   slide: {
     width,
     height,
@@ -177,9 +227,11 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     padding: 10,
+    flexDirection: "row",
+    alignItems: "center",
   },
   skipText: {
-    color: "white",
+    color: "#FF5733",
     fontSize: 16,
     fontWeight: "500",
   },
@@ -191,20 +243,20 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     marginBottom: 40,
+    paddingHorizontal: 20,
   },
   title: {
-    color: "white",
-    fontSize: 28,
+    color: "#333",
+    fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 16,
     textAlign: "center",
   },
   subtitle: {
-    color: "white",
+    color: "#666",
     fontSize: 16,
     textAlign: "center",
     lineHeight: 22,
-    opacity: 0.9,
   },
   paginationContainer: {
     flexDirection: "row",
@@ -215,19 +267,19 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
+    backgroundColor: "#DDD",
     marginHorizontal: 4,
   },
   paginationDotActive: {
-    backgroundColor: "#E74C3C",
+    backgroundColor: "#FF5733",
     width: 10,
     height: 10,
     borderRadius: 5,
   },
   continueButton: {
-    backgroundColor: "#E74C3C",
+    backgroundColor: "#FF5733",
     paddingVertical: 15,
-    borderRadius: 5,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
   },

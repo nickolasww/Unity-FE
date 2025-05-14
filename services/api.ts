@@ -97,3 +97,23 @@ export const registerUser = async (name: string, email: string, password: string
 }
 
 
+export const verifyToken = async (token: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (response.ok) {
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error verifying token:', error);
+    return false;
+  }
+};

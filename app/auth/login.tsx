@@ -4,7 +4,7 @@ import { StatusBar } from "expo-status-bar"
 import { Text, TextInput, TouchableOpacity, View, SafeAreaView, Alert } from "react-native"
 import { useState, useEffect } from "react"
 import { router } from "expo-router"
-import { loginUser } from "../../services/api"
+import { loginUser, verifyToken } from "../../services/api" // Tambahkan fungsi verifyToken
 import { validateEmail, validatePassword } from "../../utils/validation"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { FontAwesome } from "@expo/vector-icons"
@@ -24,24 +24,47 @@ const Login = () => {
   const [passwordError, setPasswordError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGoogleAuthInProgress, setIsGoogleAuthInProgress] = useState(false)
+  const [isLoading, setIsLoading] = useState(true) // Add loading state
 
   // Define your app's URL scheme
-  const redirectUri = Linking.createURL("/home")
+  const redirectUri = Linking.createURL("/beranda")
 
   // Handle deep linking for OAuth callback
   useEffect(() => {
+    // Add subscription to URL events for Google Auth
+    const subscription = Linking.addEventListener('url', handleRedirect)
+    
     const checkToken = async () => {
       try {
+        setIsLoading(true)
         const token = await AsyncStorage.getItem("Token")
+        
         if (token) {
-          router.push("/personalisasi/personalisasipage")
+          // Verify if token is still valid
+          const isValid = await verifyToken(token)
+          
+          if (isValid) {
+            router.push("/beranda")
+          } else {
+            // Token is invalid or expired, remove it
+            await AsyncStorage.removeItem("Token")
+          }
         }
       } catch (error) {
         console.error("Failed to check token", error)
+        // If there's an error, assume token is invalid and remove it
+        await AsyncStorage.removeItem("Token")
+      } finally {
+        setIsLoading(false)
       }
     }
 
     checkToken()
+    
+    // Clean up subscription
+    return () => {
+      subscription.remove()
+    }
   }, [])
 
   const handleRedirect = async (event: { url: string | URL }) => {
@@ -52,10 +75,19 @@ const Login = () => {
     try {
       const url = new URL(event.url)
       const error = url.searchParams.get("error")
+      const token = url.searchParams.get("token")
   
       if (error) {
         Alert.alert("Login Gagal", decodeURIComponent(error))
         return
+      }
+      
+      if (token) {
+        // Save token and redirect
+        await AsyncStorage.setItem("Token", token)
+        router.push("/beranda")
+      } else {
+        Alert.alert("Login Gagal", "Token tidak ditemukan")
       }
     } catch (err: any) {
       Alert.alert("Autentikasi Error", err?.message || "Gagal memproses login.")
@@ -94,7 +126,7 @@ const Login = () => {
 
       if (data && data.authtoken) {
         await AsyncStorage.setItem("Token", data.authtoken)
-        router.push("/personalisasi/personalisasipage")
+        router.push("/beranda")
       } else {
         throw new Error("Authentication token tidak ditemukan")
       }
@@ -127,6 +159,15 @@ const Login = () => {
       setIsGoogleAuthInProgress(false)
       Alert.alert("Google Sign In Error", error?.message || "Gagal login via Google")
     }
+  }
+
+  // Show loading indicator while checking token
+  if (isLoading) {
+    return (
+      <View className="flex-1 bg-white justify-center items-center">
+        <Text>Memuat...</Text>
+      </View>
+    )
   }
 
   return (
