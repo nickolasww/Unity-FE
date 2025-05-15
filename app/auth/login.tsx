@@ -44,7 +44,7 @@ const Login = () => {
           const isValid = await verifyToken(token)
           
           if (isValid) {
-            router.push("/beranda")
+            router.push("/personalisasi/personalisasipage")
           } else {
             // Token is invalid or expired, remove it
             await AsyncStorage.removeItem("Token")
@@ -85,7 +85,7 @@ const Login = () => {
       if (token) {
         // Save token and redirect
         await AsyncStorage.setItem("Token", token)
-        router.push("/beranda")
+        router.push("/personalisasi/personalisasipage")
       } else {
         Alert.alert("Login Gagal", "Token tidak ditemukan")
       }
@@ -126,7 +126,7 @@ const Login = () => {
 
       if (data && data.authtoken) {
         await AsyncStorage.setItem("Token", data.authtoken)
-        router.push("/beranda")
+        router.push("/personalisasi/personalisasipage")
       } else {
         throw new Error("Authentication token tidak ditemukan")
       }

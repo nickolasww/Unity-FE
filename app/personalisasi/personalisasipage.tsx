@@ -30,7 +30,7 @@ export default function PersonalisasiPage() {
   }
 
     const handleLewati = () => {
-      router.push("/(tabs)/insight");
+      router.push("/(tabs)/beranda");
     }
 
   // Calculate BMI

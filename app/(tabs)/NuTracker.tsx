@@ -14,6 +14,7 @@ import AddItemSheet from "../../components/additem/additem"
 import { format, isToday, isFuture } from "date-fns"
 import { id } from "date-fns/locale"
 import { AlertTriangle } from "lucide-react-native"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 
 // Define interfaces
 interface FoodItem {
@@ -91,7 +92,7 @@ interface TrackerData {
 }
 
 // API URL - use the provided endpoint
-const API_URL = "https://de43-118-99-68-242.ngrok-free.app/trackers/get-tracker"
+const API_URL = "https://nutripath.bccdev.id/api/v1/trackers/get-tracker"
 
 // Default nutrition data
 const defaultNutritionData: NutritionData = {
@@ -154,6 +155,8 @@ export default function NuTracker() {
   const [errorMessage, setErrorMessage] = useState("")
   const [availableDates, setAvailableDates] = useState<Date[]>([new Date()])
   const [hasData, setHasData] = useState(false)
+  const [token, setToken] = useState<string | null>(null)
+  const [tokenChecked, setTokenChecked] = useState(false)
 
   // State untuk menyimpan data makanan
   const [meals, setMeals] = useState<Meal[]>(defaultMeals)
@@ -162,15 +165,38 @@ export default function NuTracker() {
   const [nutritionData, setNutritionData] = useState<NutritionData>(defaultNutritionData)
 
   // Fetch data from API based on selected date
-  useEffect(() => {
-    fetchNutritionData()
-  }, [selectedDate])
+ useEffect(() => {
+    if (token && tokenChecked) {
+      fetchNutritionData()
+    }
+  }, [selectedDate, token, tokenChecked])
 
   // Fetch available dates (this would be a separate API call in a real app)
-  useEffect(() => {
-    // In a real app, you would fetch available dates from an API
-    // For now, we'll just use today's date as available
-    setAvailableDates([new Date()])
+ useEffect(() => {
+    const getToken = async () => {
+      try {
+        // Menggunakan kunci "authToken" sesuai dengan yang digunakan di loginUser
+        const storedToken = await AsyncStorage.getItem("authToken")
+        console.log("Retrieved token:", storedToken ? "Token exists" : "No token found")
+
+        setToken(storedToken)
+        setTokenChecked(true)
+
+        if (!storedToken) {
+          setIsError(true)
+          setErrorMessage("Token tidak ditemukan. Silakan login ulang.")
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error("Error retrieving token:", error)
+        setIsError(true)
+        setErrorMessage("Gagal mengambil token. Silakan login ulang.")
+        setIsLoading(false)
+        setTokenChecked(true)
+      }
+    }
+
+    getToken()
   }, [])
 
   const fetchNutritionData = async () => {
@@ -182,9 +208,23 @@ export default function NuTracker() {
       // Format date for API request
       const formattedDate = format(selectedDate, "yyyy-MM-dd")
 
-      // Fetch data from the provided API endpoint
-      const response = await fetch(`${API_URL}?date=${formattedDate}`)
+      if (!token) {
+        setIsError(true)
+        setErrorMessage("Token tidak ditemukan. Silakan login ulang.")
+        setIsLoading(false)
+        return
+      }
 
+      // Fetch data from the provided API endpoint
+     const response = await fetch(`${API_URL}?date=${formattedDate}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      console.log("API response status:", response.status)
       if (!response.ok) {
         // If response is 404, it means no data for this date
         if (response.status === 404) {
@@ -194,6 +234,17 @@ export default function NuTracker() {
           setMeals(defaultMeals)
           setNutritionData(defaultNutritionData)
           setHasData(false)
+          setIsLoading(false)
+          return
+        } else if (response.status === 401) {
+          // Unauthorized - token issue
+          setIsError(true)
+          setErrorMessage("Token tidak valid atau kadaluarsa. Silakan login ulang.")
+
+          // Clear the invalid token
+          await AsyncStorage.removeItem("authToken")
+          setToken(null)
+
           setIsLoading(false)
           return
         }
@@ -434,6 +485,7 @@ export default function NuTracker() {
     )
   }
 
+  
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
       <ScrollView className="flex-1 p-4">

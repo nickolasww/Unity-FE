@@ -22,6 +22,10 @@ export const RecipeRecommendationsScreen: React.FC<RecipeRecommendationsScreenPr
   const safeRecipes = recipes || []
   console.log("Rendering RecipeRecommendationsScreen with recipes:", safeRecipes.length)
 
+   if (safeRecipes.length > 0) {
+    console.log("First recipe:", JSON.stringify(safeRecipes[0], null, 2))
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
       <View className="flex-1 bg-white">

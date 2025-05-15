@@ -38,7 +38,19 @@ export const analyzeFoodImage = async (imageUri: string): Promise<FoodItem[]> =>
       return [] 
     }
 
-    const data = await response.json()
+     const responseClone = response.clone()
+
+     const rawText = await responseClone.text()
+    console.log("Raw API Response Text:", rawText)
+
+     let data
+    try {
+      data = JSON.parse(rawText)
+    } catch (e) {
+      console.error("Error parsing JSON:", e)
+      return []
+    }
+
     console.log("API Response Data:", JSON.stringify(data, null, 2))
 
     let foodsArray = []
@@ -103,8 +115,23 @@ export const saveFoodHistory = async (foods: FoodItem[], meal_time: string): Pro
       return false
     }
 
-    const data = await response.json()
-    console.log("Save food history response:", data)
+    const responseClone = response.clone()
+
+    const rawText = await responseClone.text()
+    console.log("Raw save food history response:", rawText)
+
+     let data
+    if (rawText.trim()) {
+      try {
+        data = JSON.parse(rawText)
+        console.log("Save food history response data:", data)
+      } catch (e) {
+        console.error("Error parsing JSON from save food history response:", e)
+        // Continue even if parsing fails - the save might still have succeeded
+      }
+    } else {
+      console.log("Save food history response was empty")
+    }
 
     return true
   } catch (error) {
@@ -145,8 +172,21 @@ export const analyzeIngredientsImage = async (imageUri: string): Promise<FoodIte
       return [] 
     }
 
-    const data = await response.json()
-    console.log("API Response Data:", JSON.stringify(data, null, 2))
+     const responseClone = response.clone()
+
+    // Log the raw response text for debugging
+    const rawText = await responseClone.text()
+    console.log("Raw API Response Text for ingredients:", rawText)
+
+    let data
+    try {
+      data = JSON.parse(rawText)
+    } catch (e) {
+      console.error("Error parsing JSON for ingredients:", e)
+      throw new Error("Invalid JSON response from server")
+    }
+
+    console.log("API Response Data for ingredients:", JSON.stringify(data, null, 2))
 
     let IngredientsArray = []
 
@@ -184,91 +224,143 @@ export const getRecipeRecommendations = async (foods: FoodItem[]): Promise<Recip
     const token = await AsyncStorage.getItem("authToken")
 
     const foodIds = foods.map((food) => Number(food.id))
+    console.log("Sending food IDs for recipe recommendations:", foodIds)
 
     const response = await fetch(`${API_BASE_URL}/gemini/create-food`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-         Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
-        body: JSON.stringify({
-        "food_ids": foodIds,
+      body: JSON.stringify({
+        food_ids: foodIds,
       }),
     })
-    const responseText = await response.text();
-    console.log("Raw API Response Text:", responseText);
 
-    console.log("API Response Status:", response.status)
+    // First, get the raw text response for debugging
+    const responseText = await response.text()
+    console.log("Raw recipe API response:", responseText)
 
     if (!response.ok) {
       console.error(`Server responded with ${response.status}`)
-      return [] 
+      return []
     }
 
-    const data = await response.json()
-    console.log("API Response Data:", JSON.stringify(data, null, 2))
-   let foodsArray = []
+    // Parse the response text manually since we already consumed the response body
+    let data
+    try {
+      data = JSON.parse(responseText)
+    } catch (error) {
+      console.error("Error parsing recipe response JSON:", error)
+      return []
+    }
+
+    console.log("Parsed recipe API response:", JSON.stringify(data, null, 2))
+
+    // Extract the recipes array using a more robust approach
+    let recipesArray = []
 
     if (data && typeof data === "object") {
-      // Check specifically for the gemini.foods path first
-      if (data.gemini && data.gemini.foods && Array.isArray(data.gemini.foods)) {
+      // Check all possible paths where recipes might be found
+      if (data.data && Array.isArray(data.data)) {
+        console.log("Found recipes in data path")
+        recipesArray = data.data
+      } else if (data.gemini && data.gemini.foods && Array.isArray(data.gemini.foods)) {
         console.log("Found recipes in gemini.foods path")
-        foodsArray = data.gemini.foods
+        recipesArray = data.gemini.foods
       } else if (data.foods && Array.isArray(data.foods)) {
         console.log("Found recipes in foods path")
-        foodsArray = data.foods
-      } else if (data.data && Array.isArray(data.data)) {
-        console.log("Found recipes in data path")
-        foodsArray = data.data
+        recipesArray = data.foods
+      } else if (data.recipes && Array.isArray(data.recipes)) {
+        console.log("Found recipes in recipes path")
+        recipesArray = data.recipes
       } else {
-        console.warn("Could not find foods array in expected paths, searching entire response")
-        // Try to find any array that might contain recipe data
-        for (const key in data) {
-          if (data[key] && typeof data[key] === "object") {
-            for (const subKey in data[key]) {
-              if (Array.isArray(data[key][subKey]) && data[key][subKey].length > 0) {
-                console.log(`Found potential recipes array in ${key}.${subKey}`)
-                foodsArray = data[key][subKey]
-                break
-              }
+        // Deep search for any array that might contain recipe data
+        console.log("Performing deep search for recipes array")
+        const findRecipesArray = (obj: any, path = ""): any[] | null => {
+          if (!obj || typeof obj !== "object") return null
+
+          // Check if this object has properties that look like a recipe
+          if (obj.name && (obj.calories !== undefined || obj.ingredients !== undefined)) {
+            console.log(`Found a single recipe object at ${path}`)
+            return [obj]
+          }
+
+          // Check if this is an array of objects that look like recipes
+          if (Array.isArray(obj) && obj.length > 0 && typeof obj[0] === "object") {
+            if (obj[0].name && (obj[0].calories !== undefined || obj[0].ingredients !== undefined)) {
+              console.log(`Found recipes array at ${path}`)
+              return obj
             }
           }
+
+          // Recursively search nested objects
+          for (const key in obj) {
+            const result = findRecipesArray(obj[key], `${path}.${key}`)
+            if (result) return result
+          }
+
+          return null
+        }
+
+        const result = findRecipesArray(data)
+        if (result) {
+          recipesArray = result
         }
       }
     }
 
-    if (!foodsArray || foodsArray.length === 0) {
-      console.warn("Could not find foods array in response. Using empty array.")
+    if (!recipesArray || recipesArray.length === 0) {
+      console.warn("Could not find recipes array in response")
       return []
     }
 
-    console.log(`Found ${foodsArray.length} recipes in response`)
+    console.log(`Found ${recipesArray.length} recipes in response`)
 
-    // Map the foods array to our Recipe structure
-    const recipes = foodsArray.map((food: any) => ({
-      id: food.id ? String(food.id) : String(Date.now() + Math.random()),
-      name: food.name || "Unknown Recipe",
-      calories: food.calories || 0,
-      weight: food.mass || food.weight || 0,
-      unit: food.unit || "g",
-      image: food.image || food.imageUrl || null,
-      nutritionDetails: {
-        carbs: food.carbohydrates || 0,
-        protein: food.protein || 0,
-        fat: food.fats || 0,
-        fiber: food.fiber || 0,
-      },
-      ingredients: food.recipes || [], // Use the "recipes" field for ingredients
-      cookTime: food.cookTime || food.cook_time || "15 menit",
-      difficulty: food.difficulty || "Medium",
-      steps: food.steps || [], // Add steps field
-    }))
+    // Map the recipes array to our Recipe structure with better error handling
+    const recipes = recipesArray
+      .map((recipe: any, index: number) => {
+        try {
+          if (!recipe || typeof recipe !== "object") {
+            console.warn(`Recipe at index ${index} is not an object:`, recipe)
+            return null
+          }
 
-    console.log(`Mapped ${recipes.length} recipes successfully`)
+          console.log(`Processing recipe ${index}:`, recipe.name || "unnamed")
+
+          return {
+            id: recipe.id ? String(recipe.id) : String(Date.now() + Math.random() + index),
+            name: recipe.name || `Recipe ${index + 1}`,
+            calories: typeof recipe.calories === "number" ? recipe.calories : 0,
+            weight: recipe.mass || recipe.weight || 0,
+            unit: recipe.unit || "g",
+            image: recipe.image || recipe.imageUrl || null,
+            nutritionDetails: {
+              carbs: recipe.carbohydrates || 0,
+              protein: recipe.protein || 0,
+              fat: recipe.fats || 0,
+              fiber: recipe.fiber || 0,
+            },
+            ingredients: Array.isArray(recipe.ingredients)
+              ? recipe.ingredients
+              : Array.isArray(recipe.recipes)
+                ? recipe.recipes
+                : [],
+            cookTime: recipe.cookTime || recipe.cook_time || "15 menit",
+            difficulty: recipe.difficulty || "Medium",
+            steps: Array.isArray(recipe.steps) ? recipe.steps : [],
+          }
+        } catch (error) {
+          console.error(`Error mapping recipe at index ${index}:`, error)
+          return null
+        }
+      })
+      .filter(Boolean) as Recipe[] // Remove any null entries
+
+    console.log(`Successfully mapped ${recipes.length} recipes`)
     return recipes
   } catch (error) {
     console.error("Error finding recipes:", error)
-    // Return empty array instead of throwing error
     return []
   }
 }
@@ -290,17 +382,27 @@ export const saveRecipeToUserHistory = async (foods: FoodItem[]): Promise<boolea
       body: JSON.stringify({ "food_ids": foodIds, }),
     })
 
-    const responseText = await response.text();
-    console.log("Raw API Response Text:", responseText);
+    const statusCode = response.status
+    console.log("Save recipe response status:", statusCode)
 
-     console.log("Save food history response status:", response.status)
+    // Clone the response before reading it
+    const responseClone = response.clone()
 
-    if (!response.ok) {
-      throw new Error(`Server responded with ${response.status}`)
+    // Read the response text
+    const responseText = await responseClone.text()
+    console.log("Raw save recipe response:", responseText)
+
+     if (responseText.trim()) {
+      try {
+        const data = JSON.parse(responseText)
+        console.log("Save recipe response data:", data)
+      } catch (e) {
+        console.error("Error parsing JSON from save recipe response:", e)
+        // Continue even if parsing fails - the save might still have succeeded
+      }
+    } else {
+      console.log("Save recipe response was empty")
     }
-
-    const data = await response.json()
-    console.log("Save food history response:", data)
 
     return true
   } catch (error) {

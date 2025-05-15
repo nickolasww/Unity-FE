@@ -69,7 +69,7 @@ export const registerUser = async (name: string, email: string, password: string
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        full_name: name,         // Corrected to `full_name`
+        name: name,         
         email,
         password,
         confirm_password: confirmPassword, // Corrected to `confirm_password`

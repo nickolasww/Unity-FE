@@ -256,7 +256,6 @@ export default function NutriLensScreen() {
 
       console.log("Saving recipe to history:", completeRecipe.name)
 
-      // Check if recipe already exists in history
       const exists = recipeHistory.some((item) => item.id === completeRecipe.id)
       if (!exists) {
         
@@ -266,9 +265,8 @@ export default function NutriLensScreen() {
           setShowSaveRecipeSuccess(false)
         }, 2000)
 
-        // Save to backend in background
         saveRecipeToUserHistory([completeRecipe as unknown as FoodItem]).catch((error) => {
-          console.error("Error saving to backend:", error)
+        console.error("Error saving to backend:", error)
         })
       } else {
         Alert.alert("Info", "Resep ini sudah ada di riwayat.")

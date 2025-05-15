@@ -28,15 +28,10 @@ export const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
             <Ionicons name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
           <View className="flex-1 items-end">
-            <TouchableOpacity>
-              <Ionicons name="bookmark-outline" size={24} color="#000" />
-            </TouchableOpacity>
           </View>
         </View>
 
         <ScrollView className="flex-1">
-          {/* Recipe Image */}
-          <Image source={require("../../assets/LoadingImg.png")} className="w-full h-48" resizeMode="cover" />
 
           {/* Recipe Title and Info */}
           <View className="p-4">

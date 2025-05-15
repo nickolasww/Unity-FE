@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
+import { useState, useEffect } from "react"
 import { Text, View, TextInput, TouchableOpacity, Alert, SafeAreaView } from "react-native"
 import { router } from "expo-router"
 import { registerUser } from "../../services/api"
-import { validateEmail, validatePassword } from "../../utils/validation"
+import { validateEmail, validatePassword, validateUsername } from "../../utils/validation"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { StatusBar } from "expo-status-bar"
 import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons"
@@ -19,6 +19,7 @@ const Register = () => {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [nameError, setNameError] = useState("")
   const [emailError, setEmailError] = useState("")
   const [passwordError, setPasswordError] = useState("")
   const [confirmPasswordError, setConfirmPasswordError] = useState("")
@@ -26,43 +27,43 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isGoogleAuthInProgress, setIsGoogleAuthInProgress] = useState(false)
 
-  useEffect(() =>{ 
+  useEffect(() => {
     const subscription = Linking.addEventListener("url", handleRedirect)
 
-    return () => { 
+    return () => {
       subscription.remove()
     }
   }, [])
 
   // Handle deep linking for OAuth callback
-  const handleRedirect = async (event: { url: string | URL }) => { 
-    if(isGoogleAuthInProgress && event.url) { 
+  const handleRedirect = async (event: { url: string | URL }) => {
+    if (isGoogleAuthInProgress && event.url) {
       setIsGoogleAuthInProgress(false)
 
-      try { 
+      try {
         const url = new URL(event.url)
         const token = url.searchParams.get("token")
-        const error = url.searchParams.get("error") 
+        const error = url.searchParams.get("error")
 
-        if(error) { 
+        if (error) {
           Alert.alert("Authentication Error", error)
           return
-        } 
-        if(token){ 
+        }
+        if (token) {
           await AsyncStorage.setItem("authToken", token)
 
-          Alert.alert("Pendaftaran Berhasil", "Akun Anda telah berhasil dibuat!",[
+          Alert.alert("Pendaftaran Berhasil", "Akun Anda telah berhasil dibuat!", [
             {
               text: "OK",
-              onPress: () => router.push("/home"),
+              onPress: () => router.push("/auth/login"),
             },
           ])
-        }else { 
+        } else {
           Alert.alert("Pendaftaran Berhasil", "Akun Anda telah berhasil dibuat!", [
-            { text: "OK", onPress: () => router.push("/home") },
+            { text: "OK", onPress: () => router.push("/auth/login") },
           ])
         }
-      }catch (error){ 
+      } catch (error) {
         Alert.alert("Pendaftaran Gagal", "Terjadi kesalahan saat mendaftar. Silakan coba lagi.")
       }
     }
@@ -93,9 +94,13 @@ const Register = () => {
   const validateForm = (): boolean => {
     let isValid = true
 
-    if (!name) {
-      Alert.alert("Please enter your name.")
+    // Validate name
+    const nameValidation = validateUsername(name)
+    if (!nameValidation.isValid) {
+      setNameError(nameValidation.error || "Name is required.")
       isValid = false
+    } else {
+      setNameError("")
     }
 
     if (!validateEmail(email)) {
@@ -129,14 +134,21 @@ const Register = () => {
     try {
       setIsSubmitting(true)
       const data = await registerUser(name, email, password, confirmPassword)
-      if (data && data.token) {
-        await AsyncStorage.setItem("authToken", data.token)
-        router.push("/home")
-      } else {
-        throw new Error(data.message)
-      }
+
+      // Show success message and redirect to login page
+      Alert.alert("Registration Successful", "Your account has been created successfully!", [
+        {
+          text: "OK",
+          onPress: () => router.push("/auth/login"),
+        },
+      ])
     } catch (error: any) {
-      Alert.alert("Registration Failed", error.message || "Please try again.")
+      // Check if the error message contains the name validation error
+      if (error.message.includes("Name must be at least 5 characters")) {
+        setNameError(error.message)
+      } else {
+        Alert.alert("Registration Failed", error.message || "Please try again.")
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -163,12 +175,16 @@ const Register = () => {
               placeholder="Ketik nama di sini"
               placeholderTextColor="#999"
               value={name}
-              onChangeText={setName}
+              onChangeText={(text) => {
+                setName(text)
+                if (nameError) setNameError("")
+              }}
             />
             <View className="absolute left-3 top-4">
               <AntDesign name="user" size={18} color="#999" />
             </View>
           </View>
+          {nameError ? <Text className="text-red-500 text-xs mt-1">{nameError}</Text> : null}
         </View>
 
         <View className="mt-4">
@@ -258,7 +274,11 @@ const Register = () => {
           <View className="border-t border-gray-300 flex-1"></View>
         </View>
 
-        <TouchableOpacity className="bg-white rounded-lg py-4 border border-gray-300 flex-row items-center justify-center" onPress={handleGoogleSignUp} disabled={isGoogleAuthInProgress}>
+        <TouchableOpacity
+          className="bg-white rounded-lg py-4 border border-gray-300 flex-row items-center justify-center"
+          onPress={handleGoogleSignUp}
+          disabled={isGoogleAuthInProgress}
+        >
           <View className="mr-2">
             <FontAwesome name="google" size={18} color="#4285F4" />
           </View>

@@ -1,6 +1,8 @@
+"use client"
+
 import type React from "react"
-import { useState } from "react"
-import { View, Text, ScrollView, TouchableOpacity, Image, Animated, Alert} from "react-native"
+import { useState, useEffect } from "react"
+import { View, Text, ScrollView, TouchableOpacity, Image, Animated, Alert } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import type { FoodItem } from "../../utils/foodtypes"
@@ -52,16 +54,61 @@ export const FoodAnalysisScreen: React.FC<FoodAnalysisScreenProps> = ({
   onBack,
 }) => {
   const mealOptions = ["Sarapan", "Makan Siang", "Makan Malam"]
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [showLoadingModal, setShowLoadingModal] = useState(false)
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
+  const [isProcessingRecipes, setIsProcessingRecipes] = useState(false)
 
-  // Debug logging
-  console.log("FoodAnalysisScreen - recognizedFoods:", recognizedFoods)
-  console.log("FoodAnalysisScreen - recognizedIngredients:", recognizedIngredients)
+  // Debug logging with more details
+  console.log("FoodAnalysisScreen - recognizedFoods:", JSON.stringify(recognizedFoods, null, 2))
+  console.log("FoodAnalysisScreen - recognizedIngredients:", JSON.stringify(recognizedIngredients, null, 2))
+  console.log("FoodAnalysisScreen - analysisComplete:", analysisComplete)
+  console.log("FoodAnalysisScreen - ingredientsAnalysisComplete:", ingredientsAnalysisComplete)
+  console.log("FoodAnalysisScreen - showLoadingModal:", showLoadingModal)
+  console.log("FoodAnalysisScreen - isProcessingRecipes:", isProcessingRecipes)
 
-  const[showSuccessModal, setShowSuccessModal] = useState(false)
-  const[showloadingModal, setShowloadingModal] = useState(false)
-  
+  // Check for analysis errors
+  useEffect(() => {
+    if (activeTab === "ResepKu" && ingredientsAnalysisComplete) {
+      if (!recognizedIngredients || recognizedIngredients.length === 0) {
+        setAnalysisError("Tidak ada bahan yang terdeteksi. Silakan coba lagi atau tambahkan secara manual.")
+      } else {
+        setAnalysisError(null)
+      }
+    } else if (activeTab === "NutriKu" && analysisComplete) {
+      if (!recognizedFoods || recognizedFoods.length === 0) {
+        setAnalysisError("Tidak ada makanan yang terdeteksi. Silakan coba lagi atau tambahkan secara manual.")
+      } else {
+        setAnalysisError(null)
+      }
+    }
+  }, [activeTab, analysisComplete, ingredientsAnalysisComplete, recognizedFoods, recognizedIngredients])
 
-   const handleSaveFoodWithModal = async () => {
+  // Automatically hide loading modal if it's been showing for too long (timeout safety)
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+    if (showLoadingModal) {
+      // Set a timeout to hide the modal after 30 seconds if it's still showing
+      timeoutId = setTimeout(() => {
+        console.log("Loading modal timeout triggered - hiding modal")
+        setShowLoadingModal(false)
+        setIsProcessingRecipes(false)
+
+        // Show an error message to the user
+        Alert.alert("Waktu Habis", "Pencarian resep memakan waktu terlalu lama. Silakan coba lagi.", [{ text: "OK" }])
+      }, 30000) // 30 seconds timeout
+    }
+
+    // Clean up the timeout when the component unmounts or when showLoadingModal changes
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
+  }, [showLoadingModal])
+
+  const handleSaveFoodWithModal = async () => {
     try {
       if (!recognizedFoods || recognizedFoods.length === 0) {
         Alert.alert("Info", "Tidak ada makanan yang terdeteksi. Silakan tambahkan makanan terlebih dahulu.")
@@ -69,7 +116,14 @@ export const FoodAnalysisScreen: React.FC<FoodAnalysisScreenProps> = ({
       }
 
       setShowSuccessModal(true)
-      await onSaveFood()
+
+      try {
+        await onSaveFood()
+      } catch (error) {
+        console.error("Error in onSaveFood:", error)
+        // We'll keep the modal visible for a moment even if there's an error
+        // to avoid a jarring UX, then show an error message
+      }
 
       // Modal will be closed by the parent component after the save is complete
       setTimeout(() => {
@@ -89,21 +143,48 @@ export const FoodAnalysisScreen: React.FC<FoodAnalysisScreenProps> = ({
         return
       }
 
-      setShowloadingModal(true)
-      await onFindRecipes()
+      // Set flags to indicate we're processing
+      setShowLoadingModal(true)
+      setIsProcessingRecipes(true)
 
-      // Modal will be automatically hidden when recipes are found and the screen changes
+      console.log("Starting recipe search process...")
+
+      try {
+        // Call the onFindRecipes function passed from parent
+        await onFindRecipes()
+
+        // If we get here, the function completed but the modal might still be showing
+        // This could happen if the navigation to recipe screen didn't happen
+        console.log("onFindRecipes completed, checking if we need to hide modal...")
+        setShowLoadingModal(false)
+        setIsProcessingRecipes(false)
+
+        // Small delay to allow navigation to happen
+        setTimeout(() => {
+          if (setShowLoadingModal) {
+            // Check if component is still mounted
+            console.log("Hiding loading modal after completion")
+            setShowLoadingModal(false)
+            setIsProcessingRecipes(false)
+          }
+        }, 500)
+      } catch (error) {
+        console.error("Error finding recipes:", error)
+        setShowLoadingModal(false)
+        setIsProcessingRecipes(false)
+        Alert.alert("Error", "Terjadi kesalahan saat mencari resep. Silakan coba lagi.")
+      }
     } catch (error) {
       console.error("Error in handleFindRecipesWithModal:", error)
-      setShowloadingModal(false)
+      setShowLoadingModal(false)
+      setIsProcessingRecipes(false)
       Alert.alert("Error", "Terjadi kesalahan saat mencari resep. Silakan coba lagi.")
     }
   }
 
-
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
-      <View className="flex-1 bg-white h-screen">
+      <View className="flex-1 bg-white">
         {loading ? (
           // Loading screen - menampilkan gambar dengan overlay loading
           <View className="flex-1">
@@ -152,6 +233,17 @@ export const FoodAnalysisScreen: React.FC<FoodAnalysisScreenProps> = ({
         ) : (
           // Hasil analisis - dengan thumbnail gambar
           <ScrollView className="flex-1 p-4">
+            {/* Header with back button */}
+            <View className="flex-row items-center mb-4">
+              <TouchableOpacity onPress={onBack} className="mr-2">
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+              <Text className="text-xl font-bold">{activeTab}</Text>
+              <View className="flex-1 items-end">
+                <Ionicons name="ellipsis-vertical" size={24} color="#000" />
+              </View>
+            </View>
+
             {(analysisComplete || ingredientsAnalysisComplete) && (
               <>
                 <View className="bg-orange-50 p-4 rounded-lg mb-6 flex-row items-center">
@@ -162,9 +254,7 @@ export const FoodAnalysisScreen: React.FC<FoodAnalysisScreenProps> = ({
                     <View className="flex-1">
                       <View className="flex-row items-center mb-1">
                         <Ionicons name="checkmark-circle" size={20} color="#FF5733" className="mr-1" />
-                        <Text className="text-green-500 font-bold ml-1">
-                          {activeTab === "NutriKu" ? "Makanan" : "Gambar"} selesai dianalisis
-                        </Text>
+                        <Text className="text-green-500 font-bold ml-1">Gambar selesai dianalisis</Text>
                       </View>
                       <Text className="text-gray-700 text-xs">
                         {activeTab === "NutriKu"
@@ -213,7 +303,8 @@ export const FoodAnalysisScreen: React.FC<FoodAnalysisScreenProps> = ({
                     ) : (
                       <View className="items-center justify-center py-10 bg-gray-50 rounded-lg my-4">
                         <Text className="text-gray-500">
-                          Tidak ada makanan yang terdeteksi. Silakan coba lagi atau tambahkan secara manual.
+                          {analysisError ||
+                            "Tidak ada makanan yang terdeteksi. Silakan coba lagi atau tambahkan secara manual."}
                         </Text>
                       </View>
                     )}
@@ -250,16 +341,17 @@ export const FoodAnalysisScreen: React.FC<FoodAnalysisScreenProps> = ({
                     ) : (
                       <View className="items-center justify-center py-10 bg-gray-50 rounded-lg my-4">
                         <Text className="text-gray-500">
-                          Tidak ada bahan yang terdeteksi. Silakan coba lagi atau tambahkan secara manual.
+                          {analysisError ||
+                            "Tidak ada bahan yang terdeteksi. Silakan coba lagi atau tambahkan secara manual."}
                         </Text>
                       </View>
                     )}
                   </>
                 )}
 
-                <TouchableOpacity className="flex-row items-center justify-end mt-6 mb-4" onPress={onAddItemClick}>
+                   <TouchableOpacity className="flex-row items-center justify-end mt-6 mb-4" onPress={onAddItemClick}>
                   <Ionicons name="add-circle" size={20} color="#fe572f" />
-                  <Text className="color-[#fe572f] font-bold ml-2">Tambah Item</Text>
+                  <Text className="text-[#fe572f] font-bold ml-2">Tambah Item</Text>
                 </TouchableOpacity>
 
                 <View className="flex-row mt-8 mb-4">
@@ -275,19 +367,56 @@ export const FoodAnalysisScreen: React.FC<FoodAnalysisScreenProps> = ({
                   <TouchableOpacity
                     className="flex-1 bg-orange-500 rounded-lg py-4 items-center justify-center ml-2"
                     onPress={activeTab === "NutriKu" ? handleSaveFoodWithModal : handleFindRecipesWithModal}
+                    disabled={isProcessingRecipes}
                   >
-                    <Text className="text-white font-bold">
-                      {activeTab === "NutriKu" ? "Simpan ke NuTracker" : "Temukan Resep"}
-                    </Text>
+                    {isProcessingRecipes ? (
+                      <View className="flex-row items-center">
+                        <Animated.View
+                          style={{
+                            transform: [
+                              {
+                                rotate: spinAnimation.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: ["0deg", "360deg"],
+                                }),
+                              },
+                            ],
+                          }}
+                        >
+                          <Ionicons name="refresh" size={20} color="white" />
+                        </Animated.View>
+                        <Text className="text-white font-bold ml-2">Mencari...</Text>
+                      </View>
+                    ) : (
+                      <Text className="text-white font-bold">
+                        {activeTab === "NutriKu" ? "Simpan ke NuTracker" : "Temukan Resep"}
+                      </Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               </>
             )}
           </ScrollView>
         )}
-        
-        // modal untuk menampilkan hasil temukan resep makanan
-        <FindingRecipesModal visible={showloadingModal} spinAnimation={spinAnimation} />
+
+        {/* Error Banner */}
+        {analysisError && !loading && (
+          <View className="absolute bottom-0 left-0 right-0 bg-red-500 p-3 flex-row items-center">
+            <Ionicons name="alert-circle" size={24} color="white" />
+            <Text className="text-white ml-2 flex-1">
+              Error analyzing {activeTab === "NutriKu" ? "food" : "ingredients"} image
+            </Text>
+            <TouchableOpacity onPress={() => setAnalysisError(null)}>
+              <Ionicons name="close-circle" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Success Modal for saving food */}
+        <SuccessModal visible={showSuccessModal} />
+
+        {/* Modal untuk menampilkan hasil temukan resep makanan */}
+        <FindingRecipesModal visible={showLoadingModal} spinAnimation={spinAnimation} />
       </View>
     </SafeAreaView>
   )

@@ -13,16 +13,46 @@ export const validatePassword = (
     };
   }
 
-    if(!/\d/.test(password)) {
-        return {
-        valid: false,
-        message: "Password must contain at least one number.",
-        };
-    }
+  if (!/\d/.test(password)) {
+    return {
+      valid: false,
+      message: "Password must contain at least one number.",
+    };
+  }
 
-    return { valid: true };
+  if (!/[a-z]/.test(password)) {
+    return {
+      valid: false,
+      message: "Password must contain at least one lowercase letter.",
+    };
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    return {
+      valid: false,
+      message: "Password must contain at least one uppercase letter.",
+    };
+  }
+
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    return {
+      valid: false,
+      message: "Password must contain at least one symbol.",
+    };
+  }
+
+  return { valid: true };
 };
 
-export const validateUsername = (username: string): boolean => {
-  return username.trim().length >= 2
-}
+export const validateUsername = (username: string): { isValid: boolean; error?: string } => {
+  const trimmedUsername = username.trim();
+  if (trimmedUsername.length < 5) {
+    return {
+      isValid: false,
+      error: "Name must be at least 5 characters in length",
+    };
+  }
+  return {
+    isValid: true,
+  };
+};
