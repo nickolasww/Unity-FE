@@ -1,4 +1,6 @@
-const API_BASE_URL = "https://de43-118-99-68-242.ngrok-free.app/trackers/get-tracker?date=2025-05-14"
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const API_BASE_URL = "https://nutripath.bccdev.id/api/v1"
 
 // Define interfaces for API responses
 interface ApiResponse<T> {
@@ -56,10 +58,12 @@ interface AddFoodRequest {
 // Generic fetch function with error handling
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   try {
+    const token = await AsyncStorage.getItem("authToken")
     const response = await fetch(`${API_BASE_URL}/trackers/get-tracker?date=2025-05-14`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
         ...options.headers,
       },
     })
