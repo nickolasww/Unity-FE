@@ -58,6 +58,10 @@ export default function BerandaScreen() {
     router.push("/beranda/poin")
   }
 
+  const navitgateToKonsultasi = () => { 
+    router.push("/konsultasi/konsultasipage")
+  }
+
   const handleSlideChange = (event) => {
     const slideIndex = Math.round(event.nativeEvent.contentOffset.x / width)
     setCurrentSlide(slideIndex)
@@ -126,12 +130,12 @@ export default function BerandaScreen() {
               </View>
               <Text className="text-xs font-medium">Misi</Text>
             </View>
-            <View className="items-center w-[30%]">
+            <TouchableOpacity className="items-center w-[30%]" onPress={navitgateToKonsultasi}>
               <View className="w-12 h-12 bg-emerald-100 rounded-lg justify-center items-center mb-1">
                 <Icon name="clipboard" size={24} color="#10b981" />
               </View>
               <Text className="text-xs font-medium">Konsultasi</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 

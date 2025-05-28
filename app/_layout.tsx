@@ -11,7 +11,7 @@ const RootLayout = () => {
     <Stack screenOptions={{
       headerStyle: {backgroundColor: theme.navBackground},
       headerTintColor: theme.title,
-      headerTitleStyle: {fontWeight: "bold"},
+      headerTitleStyle: {fontWeight: "semibold", fontSize: 18},
       headerTitleAlign: "center",
     }}> 
       <Stack.Screen name="index" options={{title: "index" , headerShown: false}} />
@@ -27,6 +27,11 @@ const RootLayout = () => {
       <Stack.Screen name="insight/artikellist"  options={{title: "Artikel"}} />
       <Stack.Screen name="insight/beranda"  options={{title: "Beranda" ,headerShown: false}} />
       <Stack.Screen name="beranda/poin"  options={{title: "Voucher"}} />
+      <Stack.Screen name="konsultasi/konsultasipage"  options={{title: "Konsultasi" ,headerShown: false}} />
+      <Stack.Screen name="konsultasi/konsultasidetailpage"  options={{title: "Detail Konsultan"}} />
+      <Stack.Screen name="konsultasi/verifikasiemailpage"  options={{title: "Verifikasi Email"}} />
+      <Stack.Screen name="konsultasi/detailreservasi"  options={{title: "Detail Reservasi"}} />
+      <Stack.Screen name="konsultasi/reservasiresult"  options={{title: "Reservasi"}} />
     </Stack>
   )
 }
