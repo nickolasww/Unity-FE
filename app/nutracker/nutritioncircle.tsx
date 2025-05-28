@@ -5,12 +5,12 @@ import Svg, { Circle } from "react-native-svg"
 interface NutritionCircleProps {
   current: number
   target: number
-  hasData?: boolean // Tambahan prop untuk menunjukkan apakah ada data
+  hasData?: boolean 
 }
 
 export const NutritionCircle: React.FC<NutritionCircleProps> = ({
   current = 0, // Default value
-  target = 2000, // Default value
+  target = 0, // Default value
   hasData = true,
 }) => {
   const radius = 40
@@ -30,13 +30,13 @@ export const NutritionCircle: React.FC<NutritionCircleProps> = ({
   const isExceeded = safeCurrent > safeTarget
 
   // Tentukan warna berdasarkan status data dan apakah melebihi target
-  let strokeColor = "#e0e0e0" // Default gray untuk no data
+  let strokeColor = "#e0e0e0" 
   let textColor = "text-gray-400"
 
   if (hasData) {
     if (isExceeded) {
       // Jika melebihi target, gunakan warna merah/warning
-      strokeColor = "#EF4444" // Red-500
+      strokeColor = "#EF4444" 
       textColor = "text-red-500"
     } else {
       // Jika belum melebihi target, gunakan warna orange normal
@@ -72,7 +72,6 @@ export const NutritionCircle: React.FC<NutritionCircleProps> = ({
           transform={`rotate(-90, ${radius + strokeWidth / 2}, ${radius + strokeWidth / 2})`}
         />
 
-        {/* Jika melebihi target, tambahkan efek visual tambahan */}
         {hasData && isExceeded && (
           <Circle
             cx={radius + strokeWidth / 2}
@@ -80,7 +79,7 @@ export const NutritionCircle: React.FC<NutritionCircleProps> = ({
             r={radius}
             stroke={strokeColor}
             strokeWidth={2}
-            strokeDasharray="4 4" // Dashed line untuk efek "overflow"
+            strokeDasharray="4 4" 
             fill="transparent"
             opacity={0.6}
             transform={`rotate(-90, ${radius + strokeWidth / 2}, ${radius + strokeWidth / 2})`}
