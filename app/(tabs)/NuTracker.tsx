@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native"
+import { useState, useEffect, useCallback } from "react"
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { CalendarStrip } from "../nutracker/calendarstrip"
 import { NutritionCircle } from "../nutracker/nutritioncircle"
@@ -13,12 +13,12 @@ import { FullCalendar } from "../nutracker/fullcalendar"
 import AddItemSheet from "../../components/additem/additem"
 import { format, isToday, isFuture } from "date-fns"
 import { id } from "date-fns/locale"
-import { AlertTriangle } from "lucide-react-native"
+import { AlertTriangle, Camera } from "lucide-react-native"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 
 // Define interfaces
 interface FoodItem {
-  carbs: number
+  carbs?: number
   id?: number
   name: string
   calories: number
@@ -85,8 +85,8 @@ interface TrackerData {
     total_breakfast_calories: number
     total_lunch_calories: number
     total_dinner_calories: number
-    breakfast: FoodItem[]
-    lunch: FoodItem[]
+    breakfast: FoodItem[] | null
+    lunch: FoodItem[] | null
     dinner: FoodItem[] | null
   }
 }
@@ -144,7 +144,43 @@ const defaultMeals: Meal[] = [
   },
 ]
 
+// Helper function to format date consistently
+const formatDateForAPI = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+// Helper function to create date from string (for availableDates)
+const createDateFromString = (dateString: string): Date => {
+  const [year, month, day] = dateString.split("-").map(Number)
+  return new Date(year, month - 1, day)
+}
+
+// Helper function to safely map food items
+const safeFoodItemMap = (items: FoodItem[] | null | undefined): FoodItem[] => {
+  if (!items || !Array.isArray(items)) {
+    return []
+  }
+
+  return items.map((item) => ({
+    id: item.id || 0,
+    name: item.name || "Unknown Food",
+    calories: item.calories || 0,
+    carbs: item.carbohydrates || 0,
+    protein: item.protein || 0,
+    fat: item.fats || 0,
+    fiber: item.fiber || 0,
+    created_at: item.created_at || "",
+    steps: item.steps || [],
+    recipes: item.recipes || [],
+    difficulty: item.difficulty || "",
+  }))
+}
+
 export default function NuTracker() {
+  // PENTING: Semua hooks harus dipanggil di awal komponen, tidak boleh kondisional
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [modalVisible, setModalVisible] = useState(false)
   const [calendarVisible, setCalendarVisible] = useState(false)
@@ -153,10 +189,12 @@ export default function NuTracker() {
   const [isLoading, setIsLoading] = useState(true)
   const [isError, setIsError] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
-  const [availableDates, setAvailableDates] = useState<Date[]>([new Date()])
+  const [availableDates, setAvailableDates] = useState<Date[]>([])
   const [hasData, setHasData] = useState(false)
   const [token, setToken] = useState<string | null>(null)
   const [tokenChecked, setTokenChecked] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
 
   // State untuk menyimpan data makanan
   const [meals, setMeals] = useState<Meal[]>(defaultMeals)
@@ -164,18 +202,155 @@ export default function NuTracker() {
   // State untuk menyimpan data nutrisi
   const [nutritionData, setNutritionData] = useState<NutritionData>(defaultNutritionData)
 
+  // PENTING: Semua useCallback harus dipanggil setelah useState, tidak boleh kondisional
+  const triggerRefresh = useCallback(() => {
+    setRefreshTrigger((prev) => prev + 1)
+  }, [])
+
+  const checkRefreshFlag = useCallback(async () => {
+    try {
+      const needsRefresh = await AsyncStorage.getItem("needsRefresh")
+      if (needsRefresh === "true") {
+        await AsyncStorage.removeItem("needsRefresh")
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error("Error checking refresh flag:", error)
+      return false
+    }
+  }, [])
+
+  const handleManualRefresh = useCallback(() => {
+    console.log("Manual refresh triggered")
+    triggerRefresh()
+  }, [triggerRefresh])
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await fetchNutritionData()
+    setRefreshing(false)
+  }, []) // Akan ditambahkan fetchNutritionData ke dependencies nanti
+
   // Fetch data from API based on selected date
- useEffect(() => {
+  const fetchNutritionData = useCallback(async () => {
+    setIsLoading(true)
+    setIsError(false)
+    setHasData(false)
+
+    try {
+      const formattedDate = formatDateForAPI(selectedDate)
+      console.log("Fetching data for date:", formattedDate)
+
+      if (!token) {
+        setIsError(true)
+        setErrorMessage("Token tidak ditemukan. Silakan login ulang.")
+        setIsLoading(false)
+        return
+      }
+
+      // Fetch data from the provided API endpoint
+      const response = await fetch(`${API_URL}?date=${formattedDate}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      console.log("API request URL:", `${API_URL}?date=${formattedDate}`)
+      console.log("API response status:", response.status)
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log("No data found for date:", formattedDate)
+          setMeals(defaultMeals)
+          setNutritionData(defaultNutritionData)
+          setHasData(false)
+          setIsError(false)
+          setIsLoading(false)
+          return
+        } else if (response.status === 401) {
+          setIsError(true)
+          setErrorMessage("Token tidak valid atau kadaluarsa. Silakan login ulang.")
+          await AsyncStorage.removeItem("authToken")
+          setToken(null)
+          setIsLoading(false)
+          return
+        }
+
+        // Handle other error responses
+        let errorMessage = `API request failed with status ${response.status}`
+        try {
+          const contentType = response.headers.get("content-type")
+          if (contentType && contentType.includes("application/json")) {
+            const errorBody = await response.json()
+            errorMessage += ` | Server message: ${errorBody.error || JSON.stringify(errorBody)}`
+          } else {
+            const errorText = await response.text()
+            errorMessage += ` | Server message: ${errorText}`
+          }
+        } catch (parseErr) {
+          errorMessage += " | (Gagal membaca pesan error dari server)"
+        }
+
+        throw new Error(errorMessage)
+      }
+
+      const data = await response.json()
+      console.log("API response data:", data)
+
+      // Check if API response is successful and has valid data
+      if (data.message === "success" && data.trackers) {
+        updateDataFromAPI(data)
+        setHasData(true)
+
+        // Add this date to available dates if not already present
+        setAvailableDates((prev) => {
+          const dateExists = prev.some((date) => formatDateForAPI(date) === formattedDate)
+          if (!dateExists) {
+            const newDate = createDateFromString(formattedDate)
+            return [...prev, newDate]
+          }
+          return prev
+        })
+      } else {
+        console.log("API response indicates no data or invalid structure")
+        setMeals(defaultMeals)
+        setNutritionData(defaultNutritionData)
+        setHasData(false)
+      }
+    } catch (error) {
+      console.error("Error fetching nutrition data:", error)
+      setIsError(true)
+      setErrorMessage("Gagal memuat data. Silakan coba lagi.")
+      setMeals(defaultMeals)
+      setNutritionData(defaultNutritionData)
+      setHasData(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [selectedDate, token]) // Tambahkan dependencies yang dibutuhkan
+
+  // Update dependencies untuk onRefresh
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const memoizedOnRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await fetchNutritionData()
+    setRefreshing(false)
+  }, [fetchNutritionData])
+
+  // Fetch data from API based on selected date
+  useEffect(() => {
     if (token && tokenChecked) {
       fetchNutritionData()
     }
-  }, [selectedDate, token, tokenChecked])
+  }, [selectedDate, token, tokenChecked, refreshTrigger, fetchNutritionData])
 
-  // Fetch available dates (this would be a separate API call in a real app)
- useEffect(() => {
+  // Get token on component mount
+  useEffect(() => {
     const getToken = async () => {
       try {
-        // Menggunakan kunci "authToken" sesuai dengan yang digunakan di loginUser
         const storedToken = await AsyncStorage.getItem("authToken")
         console.log("Retrieved token:", storedToken ? "Token exists" : "No token found")
 
@@ -199,167 +374,92 @@ export default function NuTracker() {
     getToken()
   }, [])
 
-  const fetchNutritionData = async () => {
-    setIsLoading(true)
-    setIsError(false)
-    setHasData(false)
-
-    try {
-      // Format date for API request
-      const formattedDate = format(selectedDate, "yyyy-MM-dd")
-
-      if (!token) {
-        setIsError(true)
-        setErrorMessage("Token tidak ditemukan. Silakan login ulang.")
-        setIsLoading(false)
-        return
-      }
-
-      // Fetch data from the provided API endpoint
-     const response = await fetch(`${API_URL}?date=${formattedDate}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-
-      console.log("API response status:", response.status)
-      if (!response.ok) {
-        // If response is 404, it means no data for this date
-        if (response.status === 404) {
-          setIsError(true)
-          setErrorMessage("Maaf, anda belum pernah scan makanan")
-          // Reset to default values
-          setMeals(defaultMeals)
-          setNutritionData(defaultNutritionData)
-          setHasData(false)
-          setIsLoading(false)
-          return
-        } else if (response.status === 401) {
-          // Unauthorized - token issue
-          setIsError(true)
-          setErrorMessage("Token tidak valid atau kadaluarsa. Silakan login ulang.")
-
-          // Clear the invalid token
-          await AsyncStorage.removeItem("authToken")
-          setToken(null)
-
-          setIsLoading(false)
-          return
+  // Check for refresh flag when component mounts or becomes visible
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      if (token && tokenChecked) {
+        const needsRefresh = await checkRefreshFlag()
+        if (needsRefresh) {
+          console.log("Refresh flag detected, fetching new data...")
+          fetchNutritionData()
         }
-        throw new Error(`API request failed with status ${response.status}`)
       }
-
-      const data = await response.json()
-
-      // Check if API response is successful
-      if (data.message === "success") {
-        updateDataFromAPI(data)
-        setHasData(true)
-      } else {
-        throw new Error("Failed to fetch nutrition data")
-      }
-    } catch (error) {
-      console.error("Error fetching nutrition data:", error)
-      setIsError(true)
-      setErrorMessage("Maaf, anda belum pernah scan makanan")
-      // Reset to default values
-      setMeals(defaultMeals)
-      setNutritionData(defaultNutritionData)
-      setHasData(false)
-    } finally {
-      setIsLoading(false)
     }
-  }
 
-  // Update local state with data from API
+    checkForUpdates()
+  }, [token, tokenChecked, refreshTrigger, checkRefreshFlag, fetchNutritionData])
+
+  // Update local state with data from API - WITH NULL SAFETY
   const updateDataFromAPI = (data: TrackerData) => {
-    const { trackers } = data
+    console.log("Updating data from API:", data)
 
-    // Update meals
+    // Safely extract trackers data with fallbacks
+    const trackers = data.trackers || ({} as TrackerData["trackers"])
+
+    // Safely map meal items with null checks
+    const breakfastItems = safeFoodItemMap(trackers.breakfast)
+    const lunchItems = safeFoodItemMap(trackers.lunch)
+    const dinnerItems = safeFoodItemMap(trackers.dinner)
+
+    console.log("Processed meal items:", {
+      breakfast: breakfastItems.length,
+      lunch: lunchItems.length,
+      dinner: dinnerItems.length,
+    })
+
+    // Update meals with safe data
     const updatedMeals = [
       {
         type: "Sarapan",
         icon: "🍳",
-        calories: trackers.total_breakfast_calories,
-        items: trackers.breakfast.map((item) => ({
-          id: item.id,
-          name: item.name,
-          calories: item.calories,
-          carbs: item.carbohydrates,
-          protein: item.protein,
-          fat: item.fats,
-          fiber: item.fiber,
-          created_at: item.created_at,
-        })),
+        calories: trackers.total_breakfast_calories || 0,
+        items: breakfastItems,
       },
       {
         type: "Makan Siang",
         icon: "🍽️",
-        calories: trackers.total_lunch_calories,
-        items: trackers.lunch.map((item) => ({
-          id: item.id,
-          name: item.name,
-          calories: item.calories,
-          carbs: item.carbohydrates,
-          protein: item.protein,
-          fat: item.fats,
-          fiber: item.fiber,
-          steps: item.steps,
-          recipes: item.recipes,
-          difficulty: item.difficulty,
-          created_at: item.created_at,
-        })),
+        calories: trackers.total_lunch_calories || 0,
+        items: lunchItems,
       },
       {
         type: "Makan Malam",
         icon: "🌙",
-        calories: trackers.total_dinner_calories,
-        items: trackers.dinner
-          ? trackers.dinner.map((item) => ({
-              id: item.id,
-              name: item.name,
-              calories: item.calories,
-              carbs: item.carbohydrates,
-              protein: item.protein,
-              fat: item.fats,
-              fiber: item.fiber,
-              created_at: item.created_at,
-            }))
-          : [],
+        calories: trackers.total_dinner_calories || 0,
+        items: dinnerItems,
       },
     ]
 
     setMeals(updatedMeals)
 
-    // Update nutrition data
+    // Update nutrition data with fallbacks
     setNutritionData({
       calories: {
-        current: trackers.total_calories,
-        target: trackers.daily_calories,
+        current: trackers.total_calories || 0,
+        target: trackers.daily_calories || 2000,
       },
       carbs: {
-        current: trackers.total_carbohydrate,
-        target: trackers.daily_carbohydrate,
+        current: trackers.total_carbohydrate || 0,
+        target: trackers.daily_carbohydrate || 300,
         color: "purple",
       },
       protein: {
-        current: trackers.total_protein,
-        target: trackers.daily_protein,
+        current: trackers.total_protein || 0,
+        target: trackers.daily_protein || 120,
         color: "blue",
       },
       fat: {
-        current: trackers.total_fat,
-        target: trackers.daily_fat,
+        current: trackers.total_fat || 0,
+        target: trackers.daily_fat || 67,
         color: "orange",
       },
       fiber: {
-        current: trackers.total_fiber,
-        target: trackers.daily_fiber,
+        current: trackers.total_fiber || 0,
+        target: trackers.daily_fiber || 25,
         color: "green",
       },
     })
+
+    console.log("Data update completed successfully")
   }
 
   const handleAddFood = (mealType: string) => {
@@ -378,28 +478,24 @@ export default function NuTracker() {
 
   // Handle date selection and fetch new data
   const handleDateSelected = (date: Date) => {
-    // Don't allow selecting future dates
     if (isFuture(date)) {
       Alert.alert("Perhatian", "Tidak dapat memilih tanggal di masa depan")
       return
     }
 
-    // In a real app, you would check if the date is in availableDates
-    // For now, we'll just set the date and let the API handle it
-    setSelectedDate(date)
+    const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    setSelectedDate(normalizedDate)
   }
 
   // Fungsi untuk menambahkan item makanan baru
   const handleSaveItem = async (mealType: string, newItem: FoodItem) => {
     try {
-      // First update local state for immediate feedback
       setMeals((prevMeals) => {
         return prevMeals.map((meal) => {
           if (meal.type === mealType) {
-            // Add new item with a temporary ID
             const itemWithId = {
               ...newItem,
-              id: Math.floor(Math.random() * 10000), // Temporary ID
+              id: Math.floor(Math.random() * 10000),
               created_at: new Date().toISOString(),
             }
 
@@ -416,14 +512,8 @@ export default function NuTracker() {
         })
       })
 
-      // Update nutrition totals
       updateNutritionTotals(newItem)
-
-      // In a real app, you would send this to your API
-      // This would be implemented in a future version
-
-      // After successful API call, refresh data
-      // fetchNutritionData()
+      setHasData(true)
     } catch (error) {
       console.error("Error adding food item:", error)
       Alert.alert("Error", "Gagal menambahkan makanan. Silakan coba lagi.", [{ text: "OK" }])
@@ -440,7 +530,7 @@ export default function NuTracker() {
       },
       carbs: {
         ...prev.carbs,
-        current: prev.carbs.current + (newItem.carbs || 0),
+        current: prev.carbs.current + (newItem.carbs || newItem.carbohydrates || 0),
       },
       protein: {
         ...prev.protein,
@@ -462,18 +552,12 @@ export default function NuTracker() {
     if (isToday(selectedDate)) {
       return "Hari ini"
     } else {
-      // Format hari dalam bahasa Indonesia
       return format(selectedDate, "EEEE, d MMMM yyyy", { locale: id })
     }
   }
 
   // Cek apakah kalori melebihi target
   const isCalorieExceeded = nutritionData.calories.current > nutritionData.calories.target
-
-  // Retry loading data if there was an error
-  const handleRetry = () => {
-    fetchNutritionData()
-  }
 
   // Show loading state
   if (isLoading) {
@@ -485,24 +569,48 @@ export default function NuTracker() {
     )
   }
 
-  
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
-      <ScrollView className="flex-1 p-4">
+      <ScrollView
+        className="flex-1 p-4"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={memoizedOnRefresh}
+            colors={["#FF5733"]}
+            tintColor="#FF5733"
+          />
+        }
+      >
         {/* Calendar Section */}
         <View className="bg-white rounded-xl p-4 mb-4">
           <TouchableOpacity className="flex-row items-center mb-2">
             <CalendarIcon onPress={() => setCalendarVisible(true)} />
             <Text className="ml-2 text-gray-500">{getDateText()}</Text>
           </TouchableOpacity>
-          <CalendarStrip selectedDate={selectedDate} onDateSelected={handleDateSelected} />
+          <CalendarStrip
+            selectedDate={selectedDate}
+            onDateSelected={handleDateSelected}
+            availableDates={availableDates}
+          />
         </View>
 
-        {/* Error Message (if any) */}
+        {/* Error Message */}
         {isError && (
-          <View className="bg-orange-50 rounded-xl p-4 mb-4 flex-row items-center">
-            <AlertTriangle size={20} color="#FF5733" />
-            <Text className="ml-2 text-orange-700">{errorMessage}</Text>
+          <View className="bg-red-50 rounded-xl p-4 mb-4 flex-row items-center">
+            <AlertTriangle size={20} color="#DC2626" />
+            <Text className="ml-2 text-red-700">{errorMessage}</Text>
+          </View>
+        )}
+
+        {/* No Data Message */}
+        {!hasData && !isError && !isLoading && (
+          <View className="bg-blue-50 rounded-xl p-4 mb-4 flex-row items-center">
+            <Camera size={20} color="#2563EB" />
+            <View className="ml-2 flex-1">
+              <Text className="text-blue-700 font-medium">Belum ada data nutrisi</Text>
+              <Text className="text-blue-600 text-sm">Gunakan NutriLens untuk memindai makanan Anda</Text>
+            </View>
           </View>
         )}
 
@@ -510,10 +618,14 @@ export default function NuTracker() {
         <View className="bg-white rounded-xl p-4 mb-4">
           <View className="flex-row">
             <View className="w-1/3 items-center justify-center">
-              <NutritionCircle current={nutritionData.calories.current} target={nutritionData.calories.target} />
+              <NutritionCircle
+                current={nutritionData.calories.current}
+                target={nutritionData.calories.target}
+                hasData={hasData}
+              />
             </View>
             <View className="w-2/3">
-              <NutritionBars nutritionData={nutritionData} />
+              <NutritionBars nutritionData={nutritionData} hasData={hasData} />
             </View>
           </View>
 

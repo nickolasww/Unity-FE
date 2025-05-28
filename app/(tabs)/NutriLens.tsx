@@ -36,6 +36,7 @@ import { FoodAnalysisScreen } from "../../app/nutrilens/food-analysis-screen"
 import { RecipeRecommendationsScreen } from "../../app/nutrilens/recipe-recommendations-screen"
 import { RecipeDetailScreen } from "../../app/nutrilens/recipe-detail-screen"
 import { ScanOptions } from "../../app/nutrilens/scan-options"
+import { useDataRefresh } from "../../hooks/use-data-refresh"
 
 // Opsi untuk dropdown
 const mealOptions = ["Sarapan", "Makan Siang", "Makan Malam"]
@@ -124,6 +125,7 @@ export default function NutriLensScreen() {
 
   const { spinAnimation } = useSpinAnimation(loading || findingRecipes)
   const { modalAnimation } = useModalAnimation(showAddItemModal)
+  const { saveRefreshFlag } = useDataRefresh()
 
   // Load data from backend on component mount
   useEffect(() => {
@@ -258,7 +260,6 @@ export default function NutriLensScreen() {
 
       const exists = recipeHistory.some((item) => item.id === completeRecipe.id)
       if (!exists) {
-        
         setRecipeHistory([completeRecipe, ...recipeHistory])
         setShowSaveRecipeSuccess(true)
         setTimeout(() => {
@@ -266,7 +267,7 @@ export default function NutriLensScreen() {
         }, 2000)
 
         saveRecipeToUserHistory([completeRecipe as unknown as FoodItem]).catch((error) => {
-        console.error("Error saving to backend:", error)
+          console.error("Error saving to backend:", error)
         })
       } else {
         Alert.alert("Info", "Resep ini sudah ada di riwayat.")
@@ -346,10 +347,8 @@ export default function NutriLensScreen() {
     }
   }
 
-  // Function to save food to history
   const handleSaveFood = async () => {
     try {
-      // Check if there are foods to save
       if (!recognizedFoods || recognizedFoods.length === 0) {
         Alert.alert("Error", "Tidak ada makanan untuk disimpan.")
         return
@@ -358,14 +357,14 @@ export default function NutriLensScreen() {
       console.log("Attempting to save foods:", recognizedFoods)
       console.log("Selected meal:", selectedMeal)
 
-      // Save to backend
       const success = await saveFoodHistory(recognizedFoods, selectedMeal)
 
       if (success) {
-        // Show success modal
+        // Set refresh flag untuk NuTracker
+        await saveRefreshFlag()
+
         setShowSuccessModal(true)
 
-        // Update local state and reset after 2 seconds
         setTimeout(() => {
           setFoodHistory([...foodHistory, ...recognizedFoods])
           setShowSuccessModal(false)
@@ -623,27 +622,27 @@ export default function NutriLensScreen() {
       <View className="flex-1 bg-gray-100 px-3">
         <ScrollView className="flex-1 ">
           <View className="bg-white p-3 rounded-2xl mb-3 ">
-          {/* Meal Selector Dropdown */}
-          <MealSelector
-            selectedMeal={selectedMeal}
-            showOptions={showMealOptions}
-            options={mealOptions}
-            onToggleOptions={() => setShowMealOptions(!showMealOptions)}
-            onSelectMeal={selectMeal}
-          />
+            {/* Meal Selector Dropdown */}
+            <MealSelector
+              selectedMeal={selectedMeal}
+              showOptions={showMealOptions}
+              options={mealOptions}
+              onToggleOptions={() => setShowMealOptions(!showMealOptions)}
+              onSelectMeal={selectMeal}
+            />
 
-          {/* Scan Options */}
-          <ScanOptions
-            onScanFood={() => {
-              setActiveTab("NutriKu")
-              handleTakeFoodPicture()
-            }}
-            onScanIngredients={() => {
-              setActiveTab("ResepKu")
-              handleTakeIngredientsPicture()
-            }}
-          />
-          </View> 
+            {/* Scan Options */}
+            <ScanOptions
+              onScanFood={() => {
+                setActiveTab("NutriKu")
+                handleTakeFoodPicture()
+              }}
+              onScanIngredients={() => {
+                setActiveTab("ResepKu")
+                handleTakeIngredientsPicture()
+              }}
+            />
+          </View>
 
           {/* Search Bar */}
           <View className="bg-white rounded-full flex-row items-center px-4 py-1 mb-7 shadow-sm border border-gray-200">
@@ -658,100 +657,105 @@ export default function NutriLensScreen() {
 
           {/* Tabs */}
           <View className="bg-white px-4 pt-4 rounded-t-2xl ">
-          <View className="flex-row mb-4">
-            <TouchableOpacity
-              className={`flex-1 py-3 ${
-                activeTab === "NutriKu" ? "bg-orange-500" : "bg-white"
-              } rounded-l-3xl rounded-r-3xl items-center`}
-              onPress={() => setActiveTab("NutriKu")}
-            >
-              <Text className={activeTab === "NutriKu" ? "text-white font-bold" : "text-gray-500"}>NutriKu</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={`flex-1 py-3 ${
-                activeTab === "ResepKu" ? "bg-green-500" : "bg-white"
-              } rounded-r-3xl rounded-l-3xl items-center`}
-              onPress={() => setActiveTab("ResepKu")}
-            >
-              <Text className={activeTab === "ResepKu" ? "text-white font-bold" : "text-gray-500"}>ResepKu</Text>
-            </TouchableOpacity>
-          </View>
+            <View className="flex-row mb-4">
+              <TouchableOpacity
+                className={`flex-1 py-3 ${
+                  activeTab === "NutriKu" ? "bg-orange-500" : "bg-white"
+                } rounded-l-3xl rounded-r-3xl items-center`}
+                onPress={() => setActiveTab("NutriKu")}
+              >
+                <Text className={activeTab === "NutriKu" ? "text-white font-bold" : "text-gray-500"}>NutriKu</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`flex-1 py-3 ${
+                  activeTab === "ResepKu" ? "bg-green-500" : "bg-white"
+                } rounded-r-3xl rounded-l-3xl items-center`}
+                onPress={() => setActiveTab("ResepKu")}
+              >
+                <Text className={activeTab === "ResepKu" ? "text-white font-bold" : "text-gray-500"}>ResepKu</Text>
+              </TouchableOpacity>
+            </View>
 
-          {activeTab === "NutriKu" ? (
-            <>
-              {/* Food History */}
-              <View className="mb-6">
-                <Text className="text-lg font-bold mb-2">Riwayat</Text>
-                <Text className="text-sm text-gray-600 mb-4">Berikut asupan yang pernah kamu rekam nutrisinya.</Text>
+            {activeTab === "NutriKu" ? (
+              <>
+                {/* Food History */}
+                <View className="mb-6">
+                  <Text className="text-lg font-bold mb-2">Riwayat</Text>
+                  <Text className="text-sm text-gray-600 mb-4">Berikut asupan yang pernah kamu rekam nutrisinya.</Text>
 
-                {foodHistory.length > 0 ? (
-                  foodHistory.map((food) => <FoodHistoryItem key={food.id} food={food} />)
-                ) : (
-                  <View className="items-center justify-center py-10 bg-gray-50 rounded-lg">
-                    <Text className="text-gray-500">
-                      Belum ada riwayat makanan. Scan makanan untuk menambahkan ke riwayat.
-                    </Text>
-                  </View>
-                )}
-              </View>
+                  {foodHistory.length > 0 ? (
+                    foodHistory.map((food) => <FoodHistoryItem key={food.id} food={food} />)
+                  ) : (
+                    <View className="items-center justify-center py-10 bg-gray-50 rounded-lg">
+                      <Text className="text-gray-500">
+                        Belum ada riwayat makanan. Scan makanan untuk menambahkan ke riwayat.
+                      </Text>
+                    </View>
+                  )}
+                </View>
 
-              {/* Suggestions */}
-              <View className="mb-6">
-                <Text className="text-lg font-bold mb-2">Saran</Text>
-                <Text className="text-sm text-gray-600 mb-4">Berikut asupan yang mungkin kamu konsumsi.</Text>
+                {/* Suggestions */}
+                <View className="mb-6">
+                  <Text className="text-lg font-bold mb-2">Saran</Text>
+                  <Text className="text-sm text-gray-600 mb-4">Berikut asupan yang mungkin kamu konsumsi.</Text>
 
-                {suggestedFoods.map((food) => (
-                  <FoodHistoryItem key={food.id} food={food} showAddButton onAddPress={() => addFoodToHistory(food)} />
-                ))}
-              </View>
-            </>
-          ) : (
-            <>
-              {/* Recipe History */}
-              <View className="mb-6 pb-20">
-                <Text className="text-lg font-bold mb-2">Riwayat</Text>
-                <Text className="text-sm text-gray-600 mb-4">Berikut resep yang pernah kamu rekam.</Text>
+                  {suggestedFoods.map((food) => (
+                    <FoodHistoryItem
+                      key={food.id}
+                      food={food}
+                      showAddButton
+                      onAddPress={() => addFoodToHistory(food)}
+                    />
+                  ))}
+                </View>
+              </>
+            ) : (
+              <>
+                {/* Recipe History */}
+                <View className="mb-6 pb-20">
+                  <Text className="text-lg font-bold mb-2">Riwayat</Text>
+                  <Text className="text-sm text-gray-600 mb-4">Berikut resep yang pernah kamu rekam.</Text>
 
-                {recipeHistory.length > 0 ? (
-                  <View className="border border-gray-200 rounded-lg overflow-hidden">
-                    {recipeHistory.map((recipe) => (
-                      <TouchableOpacity
-                        key={recipe.id}
-                        className="flex-row items-center p-3 border-b border-gray-200"
-                        onPress={() => navigateToRecipeDetail(recipe)}
-                      >
-                        <Image
-                          source={require("../../assets/LoadingImg.png")}
-                          className="w-12 h-12 rounded-lg mr-3"
-                          resizeMode="cover"
-                        />
-                        <View className="flex-1">
-                          <Text className="font-bold">{recipe.name}</Text>
-                          <View className="flex-row mt-1">
-                            <View className="bg-red-100 rounded-lg px-2 py-1 mr-2">
-                              <Text className="text-orange-500 text-xs">{recipe.calories} kkal</Text>
-                            </View>
-                            <View className="bg-green-100 rounded-lg px-2 py-1">
-                              <Text className="text-green-500 text-xs">{recipe.weight}g</Text>
+                  {recipeHistory.length > 0 ? (
+                    <View className="border border-gray-200 rounded-lg overflow-hidden">
+                      {recipeHistory.map((recipe) => (
+                        <TouchableOpacity
+                          key={recipe.id}
+                          className="flex-row items-center p-3 border-b border-gray-200"
+                          onPress={() => navigateToRecipeDetail(recipe)}
+                        >
+                          <Image
+                            source={require("../../assets/LoadingImg.png")}
+                            className="w-12 h-12 rounded-lg mr-3"
+                            resizeMode="cover"
+                          />
+                          <View className="flex-1">
+                            <Text className="font-bold">{recipe.name}</Text>
+                            <View className="flex-row mt-1">
+                              <View className="bg-red-100 rounded-lg px-2 py-1 mr-2">
+                                <Text className="text-orange-500 text-xs">{recipe.calories} kkal</Text>
+                              </View>
+                              <View className="bg-green-100 rounded-lg px-2 py-1">
+                                <Text className="text-green-500 text-xs">{recipe.weight}g</Text>
+                              </View>
                             </View>
                           </View>
-                        </View>
-                        <TouchableOpacity className="p-2" onPress={() => handleBookmarkClick(recipe)}>
-                          <Ionicons name="bookmark-outline" size={24} color="#10B981" />
+                          <TouchableOpacity className="p-2" onPress={() => handleBookmarkClick(recipe)}>
+                            <Ionicons name="bookmark-outline" size={24} color="#10B981" />
+                          </TouchableOpacity>
                         </TouchableOpacity>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                ) : (
-                  <View className="items-center justify-center py-10 bg-gray-50 rounded-lg">
-                    <Text className="text-gray-500">
-                      Belum ada riwayat resep. Scan bahan-bahan untuk mendapatkan rekomendasi resep.
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </>
-          )}
+                      ))}
+                    </View>
+                  ) : (
+                    <View className="items-center justify-center py-10 bg-gray-50 rounded-lg">
+                      <Text className="text-gray-500">
+                        Belum ada riwayat resep. Scan bahan-bahan untuk mendapatkan rekomendasi resep.
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </>
+            )}
           </View>
           {/* Success Message */}
           {showSuccessModal && (

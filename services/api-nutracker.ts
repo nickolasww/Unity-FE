@@ -59,13 +59,16 @@ interface AddFoodRequest {
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   try {
     const token = await AsyncStorage.getItem("authToken")
-    const response = await fetch(`${API_BASE_URL}/trackers/get-tracker?date=2025-05-14`, {
+    const response = await fetch(`${API_BASE_URL}/trackers/get-tracker`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
         ...options.headers,
       },
+        body: JSON.stringify({
+        "date": new Date().toISOString().split('T')[0],
+      }),
     })
 
     const data = await response.json()

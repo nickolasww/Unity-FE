@@ -30,10 +30,14 @@ interface NutritionData {
 
 interface NutritionBarsProps {
   nutritionData: NutritionData
+  hasData?: boolean // Tambahan prop untuk status data
 }
 
-export const NutritionBars: React.FC<NutritionBarsProps> = ({ nutritionData }) => {
-  const getColorClass = (color: string) => {
+export const NutritionBars: React.FC<NutritionBarsProps> = ({ nutritionData, hasData = true }) => {
+  const getColorClass = (color: string, hasData: boolean) => {
+    // Jika tidak ada data, gunakan warna abu-abu
+    if (!hasData) return "bg-gray-300"
+
     switch (color) {
       case "purple":
         return "bg-purple-500"
@@ -49,29 +53,76 @@ export const NutritionBars: React.FC<NutritionBarsProps> = ({ nutritionData }) =
   }
 
   const renderBar = (label: string, current: number, target: number, color: string) => {
-    const progress = Math.min(current / target, 1.5) * 100 // Cap at 150% for visual purposes
+    // Validasi dan sanitasi input
+    const safeCurrent = typeof current === "number" && !isNaN(current) ? current : 0
+    const safeTarget = typeof target === "number" && !isNaN(target) && target > 0 ? target : 1
+
+    // Hitung progress dengan validasi
+    const progress = safeTarget > 0 ? Math.min(safeCurrent / safeTarget, 1.5) * 100 : 0
+
+    // Tentukan style text berdasarkan status data
+    const textStyle = hasData ? "text-black" : "text-gray-500"
 
     return (
       <View className="mb-2">
         <View className="flex-row justify-between mb-1">
-          <Text className="text-sm">{label}</Text>
-          <Text className="text-sm">
-            {current}g / {target}g
+          <Text className={`text-sm ${textStyle}`}>{label}</Text>
+          <Text className={`text-sm ${textStyle}`}>
+            {safeCurrent}g / {safeTarget}g
           </Text>
         </View>
         <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
-          <View className={`h-full ${getColorClass(color)}`} style={{ width: `${progress}%` }} />
+          <View className={`h-full ${getColorClass(color, hasData)}`} style={{ width: `${progress}%` }} />
         </View>
       </View>
     )
   }
 
+  // Validasi nutritionData dengan fallback values
+  const safeNutritionData = {
+    carbs: {
+      current: nutritionData?.carbs?.current ?? 0,
+      target: nutritionData?.carbs?.target ?? 300,
+      color: nutritionData?.carbs?.color ?? "purple",
+    },
+    protein: {
+      current: nutritionData?.protein?.current ?? 0,
+      target: nutritionData?.protein?.target ?? 120,
+      color: nutritionData?.protein?.color ?? "blue",
+    },
+    fat: {
+      current: nutritionData?.fat?.current ?? 0,
+      target: nutritionData?.fat?.target ?? 67,
+      color: nutritionData?.fat?.color ?? "orange",
+    },
+    fiber: {
+      current: nutritionData?.fiber?.current ?? 0,
+      target: nutritionData?.fiber?.target ?? 25,
+      color: nutritionData?.fiber?.color ?? "green",
+    },
+  }
+
   return (
     <View className="px-2">
-      {renderBar("Karbohidrat", nutritionData.carbs.current, nutritionData.carbs.target, nutritionData.carbs.color)}
-      {renderBar("Protein", nutritionData.protein.current, nutritionData.protein.target, nutritionData.protein.color)}
-      {renderBar("Lemak", nutritionData.fat.current, nutritionData.fat.target, nutritionData.fat.color)}
-      {renderBar("Serat", nutritionData.fiber.current, nutritionData.fiber.target, nutritionData.fiber.color)}
+      {renderBar(
+        "Karbohidrat",
+        safeNutritionData.carbs.current,
+        safeNutritionData.carbs.target,
+        safeNutritionData.carbs.color,
+      )}
+      {renderBar(
+        "Protein",
+        safeNutritionData.protein.current,
+        safeNutritionData.protein.target,
+        safeNutritionData.protein.color,
+      )}
+      {renderBar("Lemak", safeNutritionData.fat.current, safeNutritionData.fat.target, safeNutritionData.fat.color)}
+      {renderBar(
+        "Serat",
+        safeNutritionData.fiber.current,
+        safeNutritionData.fiber.target,
+        safeNutritionData.fiber.color,
+      )}
     </View>
   )
 }

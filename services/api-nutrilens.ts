@@ -83,11 +83,16 @@ export const analyzeFoodImage = async (imageUri: string): Promise<FoodItem[]> =>
   }
 }
 
-
 // Function to save food history to backend
 export const saveFoodHistory = async (foods: FoodItem[], meal_time: string): Promise<boolean> => {
   try {
     const token = await AsyncStorage.getItem("authToken")
+
+    if (!token) {
+      console.error("No auth token found")
+      return false
+    }
+
     // Extract only the food IDs from the foods array
     const foodIds = foods.map((food) => Number(food.id))
 
@@ -95,36 +100,33 @@ export const saveFoodHistory = async (foods: FoodItem[], meal_time: string): Pro
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
+        body: JSON.stringify({
         meal_time,
         "food_ids": foodIds,
         "type": "nutriku",
-        "date": new Date().toISOString() ,
+        "date": new Date().toISOString().replace("T", " ").substring(0, 19),
       }),
     })
 
-    const responseText = await response.text();
-    console.log("Raw API Response Text:", responseText);
-
     console.log("Save food history response status:", response.status)
 
+    // Baca response text sekali saja (tidak perlu clone)
+    const responseText = await response.text()
+    console.log("Raw save food history response:", responseText)
+
     if (!response.ok) {
-      console.error(`Server responded with ${response.status}`)
+      console.error(`Server responded with ${response.status}: ${responseText}`)
       return false
     }
 
-    const responseClone = response.clone()
-
-    const rawText = await responseClone.text()
-    console.log("Raw save food history response:", rawText)
-
-     let data
-    if (rawText.trim()) {
+    // Parse response jika ada content
+    let responseData
+    if (responseText.trim()) {
       try {
-        data = JSON.parse(rawText)
-        console.log("Save food history response data:", data)
+        responseData = JSON.parse(responseText)
+        console.log("Save food history response data:", responseData)
       } catch (e) {
         console.error("Error parsing JSON from save food history response:", e)
         // Continue even if parsing fails - the save might still have succeeded
@@ -133,9 +135,20 @@ export const saveFoodHistory = async (foods: FoodItem[], meal_time: string): Pro
       console.log("Save food history response was empty")
     }
 
+    // ✅ TAMBAHAN: Set flag refresh untuk NuTracker setelah berhasil menyimpan
+    try {
+      await AsyncStorage.setItem("needsRefresh", "true")
+      await AsyncStorage.setItem("lastUpdateTime", Date.now().toString())
+      console.log("✅ Refresh flag set successfully - NuTracker akan update data")
+    } catch (flagError) {
+      console.error("Error setting refresh flag:", flagError)
+      // Tidak return false karena save sudah berhasil, hanya flag yang gagal
+    }
+
+    console.log("✅ Food history saved successfully")
     return true
   } catch (error) {
-    console.error("Error saving food history:", error)
+    console.error("❌ Error saving food history:", error)
     return false
   }
 }

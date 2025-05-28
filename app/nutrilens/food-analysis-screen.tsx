@@ -9,6 +9,7 @@ import type { FoodItem } from "../../utils/foodtypes"
 import { MealSelector } from "../../app/nutrilens/meal-selector"
 import SuccessModal from "./success-modal"
 import FindingRecipesModal from "./finding-recipes-modal"
+import { useDataRefresh } from "../../hooks/use-data-refresh"
 
 interface FoodAnalysisScreenProps {
   imageUri: string
@@ -58,6 +59,7 @@ export const FoodAnalysisScreen: React.FC<FoodAnalysisScreenProps> = ({
   const [showLoadingModal, setShowLoadingModal] = useState(false)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
   const [isProcessingRecipes, setIsProcessingRecipes] = useState(false)
+  const { saveRefreshFlag } = useDataRefresh()
 
   // Debug logging with more details
   console.log("FoodAnalysisScreen - recognizedFoods:", JSON.stringify(recognizedFoods, null, 2))
@@ -119,6 +121,8 @@ export const FoodAnalysisScreen: React.FC<FoodAnalysisScreenProps> = ({
 
       try {
         await onSaveFood()
+        // Set refresh flag setelah berhasil menyimpan
+        await saveRefreshFlag()
       } catch (error) {
         console.error("Error in onSaveFood:", error)
         // We'll keep the modal visible for a moment even if there's an error
@@ -349,7 +353,7 @@ export const FoodAnalysisScreen: React.FC<FoodAnalysisScreenProps> = ({
                   </>
                 )}
 
-                   <TouchableOpacity className="flex-row items-center justify-end mt-6 mb-4" onPress={onAddItemClick}>
+                <TouchableOpacity className="flex-row items-center justify-end mt-6 mb-4" onPress={onAddItemClick}>
                   <Ionicons name="add-circle" size={20} color="#fe572f" />
                   <Text className="text-[#fe572f] font-bold ml-2">Tambah Item</Text>
                 </TouchableOpacity>
