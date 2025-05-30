@@ -1,11 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   ArrowRightOnRectangleIcon
 } from 'react-native-heroicons/outline';
+import { useNavigation } from '@react-navigation/native'; // Import useNavigation hook
+import { router } from 'expo-router';
+
+// Import fungsi logoutUser
+const logoutUser = async () => {
+  try {
+    // Hapus token dari AsyncStorage
+    await AsyncStorage.removeItem("authToken");
+    
+    // Opsional: Hapus data user lainnya jika ada
+    await AsyncStorage.removeItem("userData");
+    
+    console.log("User logged out successfully");
+    return { success: true };
+  } catch (error) {
+    console.error("Error during logout:", error);
+    throw new Error("Logout failed");
+  }
+};
 
 export default function Profile() {
+  const navigation = useNavigation(); // Gunakan hook useNavigation
   const [userData, setUserData] = useState({
     name: 'Rizka Oktavia',
     username: '@rizka.oktavia',
@@ -33,6 +53,37 @@ export default function Profile() {
     getUserData();
   }, []);
 
+  // Fungsi untuk menangani proses logout
+  const handleLogout = () => {
+    Alert.alert(
+      "Konfirmasi Logout",
+      "Apakah Anda yakin ingin keluar dari akun?",
+      [
+        {
+          text: "Batal",
+          style: "cancel"
+        },
+        {
+          text: "Keluar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const result = await logoutUser();
+              if (result.success) {
+                router.replace('/auth/login'); 
+              }
+            } catch (error) {
+              Alert.alert(
+                "Error",
+                "Gagal keluar dari akun. Silakan coba lagi.",
+                [{ text: "OK" }]
+              );
+            }
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <View className="flex-1 bg-orange-50">
@@ -68,7 +119,6 @@ export default function Profile() {
           
           <TouchableOpacity 
             className="flex-row items-center bg-white p-4 rounded-lg mb-2 border-2 border-gray-100"
-
           >
              <Image 
                 source={require('../../assets/EditProfileIcon.png')} 
@@ -105,7 +155,6 @@ export default function Profile() {
           
           <TouchableOpacity 
             className="flex-row items-center bg-white p-4 rounded-2xl mb-2 border-2 border-gray-100"
-
           >
             <Image 
                 source={require('../../assets/BantuanIcon.png')} 
@@ -115,7 +164,6 @@ export default function Profile() {
           
           <TouchableOpacity 
             className="flex-row items-center bg-white p-4 rounded-2xl mb-2 border-2 border-gray-100"
-
           >
             <Image 
                 source={require('../../assets/ShieldIcon.png')} 
@@ -132,16 +180,16 @@ export default function Profile() {
             <Text className="ml-3 text-gray-800 font-medium">Tentang</Text>
           </TouchableOpacity>
           
+          {/* Tombol Logout dengan handler */}
           <TouchableOpacity 
             className="flex-row items-center bg-white p-4 rounded-2xl border-2 border-gray-100"
-            
+            onPress={handleLogout} // Tambahkan onPress handler untuk logout
           >
             <ArrowRightOnRectangleIcon size={24} color="#EF4444" />
             <Text className="ml-3 text-red-500 font-medium">Keluar Akun</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
-      
     </View>
   );
 }
