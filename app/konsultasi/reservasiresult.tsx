@@ -6,7 +6,7 @@
     const router = useRouter();
 
     const handleOke = () => {
-      router.replace('/tabs)/beranda');
+      router.replace('/(tabs)/beranda');
     };
 
     return (

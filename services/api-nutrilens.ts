@@ -84,7 +84,7 @@ export const analyzeFoodImage = async (imageUri: string): Promise<FoodItem[]> =>
 }
 
 // Function to save food history to backend
-export const saveFoodHistory = async (foods: FoodItem[], meal_time: string): Promise<boolean> => {
+export const saveFoodHistory = async (foods: FoodItem[], meal_time: string, date?:string ): Promise<boolean> => {
   try {
     const token = await AsyncStorage.getItem("authToken")
 
@@ -106,7 +106,7 @@ export const saveFoodHistory = async (foods: FoodItem[], meal_time: string): Pro
         meal_time,
         "food_ids": foodIds,
         "type": "nutriku",
-        "date": new Date().toISOString().replace("T", " ").substring(0, 19),
+        "date": date || new Date().toISOString().replace("T", " ").substring(0, 19),
       }),
     })
 

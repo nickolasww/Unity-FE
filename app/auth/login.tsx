@@ -27,24 +27,62 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(true) // Add loading state
 
   // Define your app's URL scheme
-  const redirectUri = Linking.createURL("/beranda")
+  const redirectUri = Linking.createURL("/personalisasi/personalisasipage")
+
+  // Function to check if user has completed personalization
+  const checkPersonalizationStatus = async (token: string): Promise<boolean> => {
+    try {
+      // Replace this with your actual API endpoint to check personalization status
+      const response = await fetch(
+        "https://94e0-2404-c0-9a90-00-34d7-292f.ngrok-free.app/api/v1/user/personalization-status",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        return data.isPersonalizationComplete || false
+      }
+
+      return false
+    } catch (error) {
+      console.error("Failed to check personalization status", error)
+      return false
+    }
+  }
+
+  // Function to handle navigation based on personalization status
+  const navigateBasedOnPersonalization = async (token: string) => {
+    const isPersonalizationComplete = await checkPersonalizationStatus(token)
+
+    if (isPersonalizationComplete) {
+      router.push("/(tabs)/beranda") // Navigate to home page
+    } else {
+      router.push("/personalisasi/personalisasipage") // Navigate to personalization
+    }
+  }
 
   // Handle deep linking for OAuth callback
   useEffect(() => {
     // Add subscription to URL events for Google Auth
-    const subscription = Linking.addEventListener('url', handleRedirect)
-    
+    const subscription = Linking.addEventListener("url", handleRedirect)
+
     const checkToken = async () => {
       try {
         setIsLoading(true)
         const token = await AsyncStorage.getItem("Token")
-        
+
         if (token) {
           // Verify if token is still valid
           const isValid = await verifyToken(token)
-          
+
           if (isValid) {
-            router.push("/personalisasi/personalisasipage")
+            await navigateBasedOnPersonalization(token)
           } else {
             // Token is invalid or expired, remove it
             await AsyncStorage.removeItem("Token")
@@ -60,7 +98,7 @@ const Login = () => {
     }
 
     checkToken()
-    
+
     // Clean up subscription
     return () => {
       subscription.remove()
@@ -69,23 +107,23 @@ const Login = () => {
 
   const handleRedirect = async (event: { url: string | URL }) => {
     if (!isGoogleAuthInProgress || !event.url) return
-  
+
     setIsGoogleAuthInProgress(false)
-  
+
     try {
       const url = new URL(event.url)
       const error = url.searchParams.get("error")
       const token = url.searchParams.get("token")
-  
+
       if (error) {
         Alert.alert("Login Gagal", decodeURIComponent(error))
         return
       }
-      
+
       if (token) {
-        // Save token and redirect
+        // Save token and navigate based on personalization status
         await AsyncStorage.setItem("Token", token)
-        router.push("/personalisasi/personalisasipage")
+        await navigateBasedOnPersonalization(token)
       } else {
         Alert.alert("Login Gagal", "Token tidak ditemukan")
       }
@@ -93,7 +131,7 @@ const Login = () => {
       Alert.alert("Autentikasi Error", err?.message || "Gagal memproses login.")
     }
   }
-  
+
   const validateForm = (): boolean => {
     let isValid = true
 
@@ -118,7 +156,7 @@ const Login = () => {
 
   // Handle login process
   const handleLogin = async () => {
-    if (!validateForm()) return 
+    if (!validateForm()) return
 
     try {
       setIsSubmitting(true)
@@ -126,7 +164,7 @@ const Login = () => {
 
       if (data && data.authtoken) {
         await AsyncStorage.setItem("Token", data.authtoken)
-        router.push("/personalisasi/personalisasipage")
+        await navigateBasedOnPersonalization(data.authtoken)
       } else {
         throw new Error("Authentication token tidak ditemukan")
       }
@@ -141,19 +179,19 @@ const Login = () => {
   const handleGoogleSignIn = async () => {
     try {
       setIsGoogleAuthInProgress(true)
-  
-      const authUrl = `https://462e-175-45-191-14.ngrok-free.app/api/v1/oauth/redirect`
-  
+
+      const authUrl = `https://94e0-2404-c0-9a90-00-34d7-292f.ngrok-free.app/api/v1/oauth/redirect`
+
       const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri, {
         showInRecents: true,
         preferEphemeralSession: true,
       })
-  
+
       if (result.type === "cancel") {
         setIsGoogleAuthInProgress(false)
         Alert.alert("Dibatalkan", "Login Google dibatalkan.")
       }
-  
+
       // Jika result.type === "success", handleRedirect akan berjalan otomatis via event listener
     } catch (error: any) {
       setIsGoogleAuthInProgress(false)

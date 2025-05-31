@@ -8,7 +8,7 @@ import { Doctor } from '../../utils/konsultasitypes';
 import { ThumbsUp } from 'react-native-feather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'https://eace-2405-8740-6314-3409-592a-455a-e393-ad42.ngrok-free.app/api/v1/doctors/get-all';
+const API_BASE_URL = 'https://nutripath.bccdev.id/api/v1/doctors/get-all';
 
 const fetchDoctors = async (): Promise<Doctor[]> => {
   try {

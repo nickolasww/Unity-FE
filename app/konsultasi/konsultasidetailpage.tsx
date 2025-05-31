@@ -18,7 +18,7 @@ import type { Doctor } from "../../utils/konsultasitypes"
 import VerificationModal from "../../components/modal/verificationModal"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 
-const API_BASE_URL = "https://eace-2405-8740-6314-3409-592a-455a-e393-ad42.ngrok-free.app/api/v1"
+const API_BASE_URL = "https://nutripath.bccdev.id/api/v1"
 
 // Interface untuk response backend yang sebenarnya
 interface BackendSchedule {
@@ -413,14 +413,6 @@ export default function KonsultasiDetailPage() {
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-100">
-        <View className="p-4 bg-white">
-          <View className="flex-row items-center">
-            <TouchableOpacity onPress={() => router.back()}>
-              <ArrowLeft stroke="#000" width={24} height={24} />
-            </TouchableOpacity>
-            <Text className="text-lg font-medium ml-4">Detail Konsultan</Text>
-          </View>
-        </View>
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#22C55E" />
           <Text className="text-gray-500 mt-2">Memuat detail dokter...</Text>

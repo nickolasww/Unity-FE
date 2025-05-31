@@ -28,7 +28,7 @@ const RootLayout = () => {
       <Stack.Screen name="insight/beranda"  options={{title: "Beranda" ,headerShown: false}} />
       <Stack.Screen name="beranda/poin"  options={{title: "Voucher"}} />
       <Stack.Screen name="konsultasi/konsultasipage"  options={{title: "Konsultasi" ,headerShown: false}} />
-      <Stack.Screen name="konsultasi/konsultasidetailpage"  options={{title: "Detail Konsultan"}} />
+      <Stack.Screen name="konsultasi/konsultasidetailpage"  options={{title: "Detail Konsultan" ,headerShown: false}} />
       <Stack.Screen name="konsultasi/verifikasiemailpage"  options={{title: "Verifikasi Email"}} />
       <Stack.Screen name="konsultasi/detailreservasi"  options={{title: "Detail Reservasi"}} />
       <Stack.Screen name="konsultasi/reservasiresult"  options={{title: "Reservasi"}} />

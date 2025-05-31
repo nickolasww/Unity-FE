@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = "https://eace-2405-8740-6314-3409-592a-455a-e393-ad42.ngrok-free.app/api/v1/";
+const API_BASE_URL = "https://nutripath.bccdev.id/api/v1/";
 
 export const loginUser = async (email: string, password: string) => {
   try {
